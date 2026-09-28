@@ -12,16 +12,12 @@ jobs:
 
     steps:
 
-      # ============================================================
-      # 1. GET SOURCE
-      # ============================================================
-
       - name: Checkout
         uses: actions/checkout@v4
 
 
       # ============================================================
-      # 2. ADD OPENAI TTS API
+      # OPENAI TTS API INTERFACE
       # ============================================================
 
       - name: Add OpenAI TTS API
@@ -50,7 +46,7 @@ jobs:
 
 
       # ============================================================
-      # 3. REPLACE ANDROID TTS WITH OPENAI TTS
+      # OPENAI TTS MANAGER
       # ============================================================
 
       - name: Replace Android TTS with OpenAI TTS
@@ -88,14 +84,18 @@ jobs:
               private val prefs: SecurePrefs
           ) {
 
-              private val appContext = context.applicationContext
+              private val appContext =
+                  context.applicationContext
 
               private var tts: TextToSpeech? = null
+
               private var ready = false
 
-              private var mediaPlayer: MediaPlayer? = null
+              private var mediaPlayer: MediaPlayer? =
+                  null
 
               private var speechRate = 1.0f
+
               private var speechPitch = 1.0f
 
               private var selectedVoice = "cedar"
@@ -103,89 +103,90 @@ jobs:
               /*
                * OpenAI TTS voices
                */
-              private val voices = listOf(
+              private val voices =
+                  listOf(
 
-                  JarvisVoice(
-                      "cedar",
-                      "Cedar · OpenAI",
-                      true
-                  ),
+                      JarvisVoice(
+                          "cedar",
+                          "Cedar · OpenAI",
+                          true
+                      ),
 
-                  JarvisVoice(
-                      "marin",
-                      "Marin · OpenAI",
-                      false
-                  ),
+                      JarvisVoice(
+                          "marin",
+                          "Marin · OpenAI",
+                          false
+                      ),
 
-                  JarvisVoice(
-                      "onyx",
-                      "Onyx · OpenAI",
-                      true
-                  ),
+                      JarvisVoice(
+                          "onyx",
+                          "Onyx · OpenAI",
+                          true
+                      ),
 
-                  JarvisVoice(
-                      "ash",
-                      "Ash · OpenAI",
-                      true
-                  ),
+                      JarvisVoice(
+                          "ash",
+                          "Ash · OpenAI",
+                          true
+                      ),
 
-                  JarvisVoice(
-                      "echo",
-                      "Echo · OpenAI",
-                      true
-                  ),
+                      JarvisVoice(
+                          "echo",
+                          "Echo · OpenAI",
+                          true
+                      ),
 
-                  JarvisVoice(
-                      "ballad",
-                      "Ballad · OpenAI",
-                      true
-                  ),
+                      JarvisVoice(
+                          "ballad",
+                          "Ballad · OpenAI",
+                          true
+                      ),
 
-                  JarvisVoice(
-                      "verse",
-                      "Verse · OpenAI",
-                      true
-                  ),
+                      JarvisVoice(
+                          "verse",
+                          "Verse · OpenAI",
+                          true
+                      ),
 
-                  JarvisVoice(
-                      "alloy",
-                      "Alloy · OpenAI",
-                      false
-                  ),
+                      JarvisVoice(
+                          "alloy",
+                          "Alloy · OpenAI",
+                          false
+                      ),
 
-                  JarvisVoice(
-                      "fable",
-                      "Fable · OpenAI",
-                      false
-                  ),
+                      JarvisVoice(
+                          "fable",
+                          "Fable · OpenAI",
+                          false
+                      ),
 
-                  JarvisVoice(
-                      "coral",
-                      "Coral · OpenAI",
-                      false
-                  ),
+                      JarvisVoice(
+                          "coral",
+                          "Coral · OpenAI",
+                          false
+                      ),
 
-                  JarvisVoice(
-                      "nova",
-                      "Nova · OpenAI",
-                      false
-                  ),
+                      JarvisVoice(
+                          "nova",
+                          "Nova · OpenAI",
+                          false
+                      ),
 
-                  JarvisVoice(
-                      "sage",
-                      "Sage · OpenAI",
-                      false
-                  ),
+                      JarvisVoice(
+                          "sage",
+                          "Sage · OpenAI",
+                          false
+                      ),
 
-                  JarvisVoice(
-                      "shimmer",
-                      "Shimmer · OpenAI",
-                      false
+                      JarvisVoice(
+                          "shimmer",
+                          "Shimmer · OpenAI",
+                          false
+                      )
                   )
-              )
 
               /*
-               * OpenAI API
+               * OpenAI API client
                */
               private val api: OpenAiTtsApi by lazy {
 
@@ -227,16 +228,15 @@ jobs:
 
                   selectedVoice =
                       prefs.voiceName
-                          ?.takeIf { savedVoice ->
+                          ?.takeIf { saved ->
                               voices.any {
-                                  it.name == savedVoice
+                                  it.name == saved
                               }
                           }
                           ?: "cedar"
 
                   /*
-                   * Android TTS is kept only as
-                   * emergency fallback.
+                   * Android TTS remains only as fallback.
                    */
                   tts =
                       TextToSpeech(
@@ -304,26 +304,31 @@ jobs:
               }
 
               /*
-               * Returns OpenAI voices instead of
-               * Android device voices.
+               * Return OpenAI voices.
                */
               fun listVoices():
-                  List<JarvisVoice> =
-                  voices
+                  List<JarvisVoice> {
+
+                  return voices
+              }
 
               fun autoSelectMaleVoice():
-                  String? =
-                  voices
+                  String? {
+
+                  return voices
                       .firstOrNull {
                           it.likelyMale
                       }
                       ?.name
+              }
 
               fun setVoice(
                   name: String?
               ) {
 
-                  if (name.isNullOrBlank()) {
+                  if (
+                      name.isNullOrBlank()
+                  ) {
                       return
                   }
 
@@ -333,7 +338,8 @@ jobs:
                       }
                   ) {
 
-                      selectedVoice = name
+                      selectedVoice =
+                          name
 
                       prefs.voiceName =
                           name
@@ -341,7 +347,7 @@ jobs:
               }
 
               /*
-               * Main speech function.
+               * Main speech method.
                */
               suspend fun speak(
                   text: String
@@ -357,36 +363,36 @@ jobs:
                   }
 
                   /*
-                   * Get existing OpenAI API key
-                   * from the app settings.
+                   * Existing OpenAI API key
+                   * from JARVIS settings.
                    */
-                  val key =
+                  val apiKey =
                       prefs.aiApiKey
 
                   /*
-                   * Try OpenAI TTS first.
+                   * OpenAI TTS.
                    */
                   if (
-                      !key.isNullOrBlank()
+                      !apiKey.isNullOrBlank()
                   ) {
 
-                      val success =
+                      val result =
                           runCatching {
 
                               speakOpenAi(
-                                  apiKey = key,
-                                  text = cleanText
+                                  apiKey,
+                                  cleanText
                               )
 
                           }.getOrDefault(false)
 
-                      if (success) {
+                      if (result) {
                           return true
                       }
                   }
 
                   /*
-                   * Emergency fallback.
+                   * Emergency Android fallback.
                    */
                   return speakAndroid(
                       cleanText
@@ -394,7 +400,7 @@ jobs:
               }
 
               /*
-               * OpenAI TTS request.
+               * Generate speech using OpenAI.
                */
               private suspend fun speakOpenAi(
                   apiKey: String,
@@ -462,7 +468,7 @@ jobs:
                           )
                       }
 
-                  val file =
+                  val audioFile =
                       File.createTempFile(
                           "jarvis_tts_",
                           ".mp3",
@@ -471,14 +477,11 @@ jobs:
 
                   return try {
 
-                      /*
-                       * Download audio.
-                       */
                       withContext(
                           Dispatchers.IO
                       ) {
 
-                          val body =
+                          val response =
                               api.createSpeech(
                                   authHeader =
                                       "Bearer $apiKey",
@@ -486,13 +489,13 @@ jobs:
                                       request
                               )
 
-                          body.use { response ->
+                          response.use { body ->
 
-                              response
+                              body
                                   .byteStream()
                                   .use { input ->
 
-                                      file
+                                      audioFile
                                           .outputStream()
                                           .use { output ->
 
@@ -504,11 +507,8 @@ jobs:
                           }
                       }
 
-                      /*
-                       * Play generated MP3.
-                       */
                       playFile(
-                          file
+                          audioFile
                       )
 
                   } catch (
@@ -519,12 +519,12 @@ jobs:
 
                   } finally {
 
-                      file.delete()
+                      audioFile.delete()
                   }
               }
 
               /*
-               * Play OpenAI-generated audio.
+               * Play generated MP3.
                */
               private suspend fun playFile(
                   file: File
@@ -539,8 +539,7 @@ jobs:
                               stop()
                           }
 
-                      mediaPlayer
-                          ?.release()
+                      mediaPlayer?.release()
 
                       mediaPlayer =
                           player
@@ -563,6 +562,7 @@ jobs:
                           if (
                               continuation.isActive
                           ) {
+
                               continuation.resume(
                                   success
                               )
@@ -580,6 +580,7 @@ jobs:
                               if (
                                   continuation.isActive
                               ) {
+
                                   it.start()
                               }
                           }
@@ -615,6 +616,7 @@ jobs:
                                   if (
                                       mediaPlayer === player
                                   ) {
+
                                       mediaPlayer =
                                           null
                                   }
@@ -629,7 +631,7 @@ jobs:
                   }
 
               /*
-               * Android fallback.
+               * Android TTS fallback.
                */
               private suspend fun speakAndroid(
                   text: String
@@ -647,6 +649,7 @@ jobs:
                           if (
                               continuation.isActive
                           ) {
+
                               continuation.resume(
                                   false
                               )
@@ -655,7 +658,7 @@ jobs:
                           return@suspendCancellableCoroutine
                       }
 
-                      val id =
+                      val utteranceId =
                           UUID.randomUUID()
                               .toString()
 
@@ -668,7 +671,8 @@ jobs:
                                   override fun onStart(
                                       utteranceId:
                                       String?
-                                  ) {}
+                                  ) {
+                                  }
 
                                   override fun onDone(
                                       utteranceId:
@@ -680,10 +684,9 @@ jobs:
                                               .isActive
                                       ) {
 
-                                          continuation
-                                              .resume(
-                                                  true
-                                              )
+                                          continuation.resume(
+                                              true
+                                          )
                                       }
                                   }
 
@@ -700,10 +703,9 @@ jobs:
                                               .isActive
                                       ) {
 
-                                          continuation
-                                              .resume(
-                                                  false
-                                              )
+                                          continuation.resume(
+                                              false
+                                          )
                                       }
                                   }
                               }
@@ -715,7 +717,7 @@ jobs:
                               TextToSpeech
                                   .QUEUE_FLUSH,
                               null,
-                              id
+                              utteranceId
                           )
 
                       if (
@@ -731,7 +733,6 @@ jobs:
 
                       continuation
                           .invokeOnCancellation {
-
                               engine.stop()
                           }
                   }
@@ -763,7 +764,7 @@ jobs:
 
 
       # ============================================================
-      # 4. CONNECT SECURE PREFS
+      # CONNECT SECURE PREFS
       # ============================================================
 
       - name: Wire SecurePrefs into TTS
@@ -796,13 +797,13 @@ jobs:
           )
 
           print(
-              "SecurePrefs successfully connected to TTS."
+              "SecurePrefs successfully connected."
           )
           PY
 
 
       # ============================================================
-      # 5. VERIFY EVERYTHING
+      # SIMPLE VERIFICATION
       # ============================================================
 
       - name: Verify OpenAI TTS
@@ -810,53 +811,49 @@ jobs:
         run: |
           set -e
 
-          echo "========================================"
-          echo "VERIFYING OPENAI TTS"
-          echo "========================================"
+          echo "Checking OpenAI TTS model..."
 
-          echo ""
-          echo "1. Checking TTS model..."
-
-          grep -n \
+          grep -q \
             "gpt-4o-mini-tts" \
             app/src/main/kotlin/com/jarvis/assistant/voice/TextToSpeechManager.kt
 
-          echo ""
-          echo "2. Checking Speech API..."
+          echo "OK: TTS model"
 
-          grep -n \
+          echo "Checking Speech API..."
+
+          grep -q \
             "v1/audio/speech" \
             app/src/main/kotlin/com/jarvis/assistant/voice/OpenAiTtsApi.kt
 
-          echo ""
-          echo "3. Checking SecurePrefs..."
+          echo "OK: Speech API"
 
-          grep -n \
+          echo "Checking SecurePrefs..."
+
+          grep -q \
             "TextToSpeechManager(context, securePrefs)" \
             app/src/main/kotlin/com/jarvis/assistant/di/AppContainer.kt
 
-          echo ""
-          echo "4. Checking Cedar voice..."
+          echo "OK: SecurePrefs"
 
-          grep -n \
+          echo "Checking TTS voices..."
+
+          grep -q \
             '"cedar"' \
             app/src/main/kotlin/com/jarvis/assistant/voice/TextToSpeechManager.kt
 
-          echo ""
-          echo "5. Checking OpenAI voices..."
+          echo "OK: Cedar"
 
-          grep -n \
-            'JarvisVoice("marin"' \
+          grep -q \
+            '"marin"' \
             app/src/main/kotlin/com/jarvis/assistant/voice/TextToSpeechManager.kt
 
-          echo ""
-          echo "========================================"
-          echo "OPENAI TTS VERIFICATION PASSED"
-          echo "========================================"
+          echo "OK: Marin"
+
+          echo "Checking completed successfully."
 
 
       # ============================================================
-      # 6. JAVA
+      # JAVA 17
       # ============================================================
 
       - name: Set up Java 17
@@ -867,7 +864,7 @@ jobs:
 
 
       # ============================================================
-      # 7. GRADLE
+      # GRADLE
       # ============================================================
 
       - name: Set up Gradle
@@ -877,7 +874,7 @@ jobs:
 
 
       # ============================================================
-      # 8. BUILD APK
+      # BUILD
       # ============================================================
 
       - name: Build APK
@@ -889,7 +886,7 @@ jobs:
 
 
       # ============================================================
-      # 9. UPLOAD APK
+      # UPLOAD
       # ============================================================
 
       - name: Upload OpenAI TTS APK
