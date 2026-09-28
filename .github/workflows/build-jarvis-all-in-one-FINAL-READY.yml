@@ -1,0 +1,647 @@
+name: Build JARVIS Voice Persistent Audio Upgrade
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-jarvis-all-in-one.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.9"
+
+      - name: Patch continuous speech recognition and persistent MP3 TTS
+        shell: bash
+        run: |
+          set -e
+          python3 <<'PY'
+          from pathlib import Path
+          import base64
+          
+          root = Path("app/src/main/kotlin/com/jarvis/assistant")
+          
+          speech = base64.b64decode("cGFja2FnZSBjb20uamFydmlzLmFzc2lzdGFudC52b2ljZQoKaW1wb3J0IGFuZHJvaWQuY29udGVudC5Db250ZXh0CmltcG9ydCBhbmRyb2lkLmNvbnRlbnQuSW50ZW50CmltcG9ydCBhbmRyb2lkLm9zLkJ1bmRsZQppbXBvcnQgYW5kcm9pZC5zcGVlY2guUmVjb2duaXRpb25MaXN0ZW5lcgppbXBvcnQgYW5kcm9pZC5zcGVlY2guUmVjb2duaXplckludGVudAppbXBvcnQgYW5kcm9pZC5zcGVlY2guU3BlZWNoUmVjb2duaXplcgppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmNoYW5uZWxzLmF3YWl0Q2xvc2UKaW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5kZWxheQppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmZsb3cuRmxvdwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmZsb3cuY2FsbGJhY2tGbG93CmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMubGF1bmNoCgpzZWFsZWQgY2xhc3MgU3BlZWNoRXZlbnQgewogICAgZGF0YSBjbGFzcyBQYXJ0aWFsUmVzdWx0KHZhbCB0ZXh0OiBTdHJpbmcpIDogU3BlZWNoRXZlbnQoKQogICAgZGF0YSBjbGFzcyBGaW5hbFJlc3VsdCh2YWwgdGV4dDogU3RyaW5nKSA6IFNwZWVjaEV2ZW50KCkKICAgIGRhdGEgY2xhc3MgRXJyb3IodmFsIG1lc3NhZ2U6IFN0cmluZykgOiBTcGVlY2hFdmVudCgpCiAgICBvYmplY3QgTGlzdGVuaW5nU3RhcnRlZCA6IFNwZWVjaEV2ZW50KCkKICAgIG9iamVjdCBMaXN0ZW5pbmdFbmRlZCA6IFNwZWVjaEV2ZW50KCkKfQoKY2xhc3MgU3BlZWNoVG9UZXh0TWFuYWdlcihwcml2YXRlIHZhbCBjb250ZXh0OiBDb250ZXh0KSB7CiAgICBwcml2YXRlIHZhciByZWNvZ25pemVyOiBTcGVlY2hSZWNvZ25pemVyPyA9IG51bGwKICAgIEBWb2xhdGlsZSBwcml2YXRlIHZhciBjYW5jZWxsZWQgPSBmYWxzZQoKICAgIGZ1biBpc0F2YWlsYWJsZSgpOiBCb29sZWFuID0gU3BlZWNoUmVjb2duaXplci5pc1JlY29nbml0aW9uQXZhaWxhYmxlKGNvbnRleHQpCgogICAgZnVuIGxpc3RlbihsYW5ndWFnZVRhZzogU3RyaW5nPyk6IEZsb3c8U3BlZWNoRXZlbnQ+ID0gY2FsbGJhY2tGbG93IHsKICAgICAgICBpZiAoIWlzQXZhaWxhYmxlKCkpIHsKICAgICAgICAgICAgdHJ5U2VuZChTcGVlY2hFdmVudC5FcnJvcigiU3BlZWNoIHJlY29nbml0aW9uIGlzbid0IGF2YWlsYWJsZSBvbiB0aGlzIGRldmljZS4iKSkKICAgICAgICAgICAgY2xvc2UoKQogICAgICAgICAgICByZXR1cm5AY2FsbGJhY2tGbG93CiAgICAgICAgfQoKICAgICAgICBjYW5jZWxsZWQgPSBmYWxzZQogICAgICAgIHZhciB0cmFuc2NyaXB0ID0gIiIKICAgICAgICB2YXIgbGFzdFJlc3VsdCA9ICIiCgogICAgICAgIGZ1biBzdGFydFNlc3Npb24oKSB7CiAgICAgICAgICAgIGlmIChjYW5jZWxsZWQpIHJldHVybgogICAgICAgICAgICByZWNvZ25pemVyPy5ydW5DYXRjaGluZyB7IHN0b3BMaXN0ZW5pbmcoKTsgY2FuY2VsKCk7IGRlc3Ryb3koKSB9CgogICAgICAgICAgICB2YWwgc3IgPSBTcGVlY2hSZWNvZ25pemVyLmNyZWF0ZVNwZWVjaFJlY29nbml6ZXIoY29udGV4dCkKICAgICAgICAgICAgcmVjb2duaXplciA9IHNyCgogICAgICAgICAgICBzci5zZXRSZWNvZ25pdGlvbkxpc3RlbmVyKG9iamVjdCA6IFJlY29nbml0aW9uTGlzdGVuZXIgewogICAgICAgICAgICAgICAgb3ZlcnJpZGUgZnVuIG9uUmVhZHlGb3JTcGVlY2gocGFyYW1zOiBCdW5kbGU/KSB7CiAgICAgICAgICAgICAgICAgICAgdHJ5U2VuZChTcGVlY2hFdmVudC5MaXN0ZW5pbmdTdGFydGVkKQogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvbkJlZ2lubmluZ09mU3BlZWNoKCkge30KICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvblJtc0NoYW5nZWQocm1zZEI6IEZsb2F0KSB7fQogICAgICAgICAgICAgICAgb3ZlcnJpZGUgZnVuIG9uQnVmZmVyUmVjZWl2ZWQoYnVmZmVyOiBCeXRlQXJyYXk/KSB7fQoKICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvbkVuZE9mU3BlZWNoKCkgewogICAgICAgICAgICAgICAgICAgIHRyeVNlbmQoU3BlZWNoRXZlbnQuTGlzdGVuaW5nRW5kZWQpCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgb3ZlcnJpZGUgZnVuIG9uUGFydGlhbFJlc3VsdHMocGFydGlhbFJlc3VsdHM6IEJ1bmRsZT8pIHsKICAgICAgICAgICAgICAgICAgICB2YWwgcGFydGlhbCA9IHBhcnRpYWxSZXN1bHRzCiAgICAgICAgICAgICAgICAgICAgICAgID8uZ2V0U3RyaW5nQXJyYXlMaXN0KFNwZWVjaFJlY29nbml6ZXIuUkVTVUxUU19SRUNPR05JVElPTikKICAgICAgICAgICAgICAgICAgICAgICAgPy5maXJzdE9yTnVsbCgpCiAgICAgICAgICAgICAgICAgICAgICAgID8udHJpbSgpCiAgICAgICAgICAgICAgICAgICAgICAgIC5vckVtcHR5KCkKCiAgICAgICAgICAgICAgICAgICAgaWYgKHBhcnRpYWwuaXNOb3RCbGFuaygpKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHZhbCBwcmV2aWV3ID0gaWYgKHRyYW5zY3JpcHQuaXNCbGFuaygpKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBwYXJ0aWFsCiAgICAgICAgICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICB0cmFuc2NyaXB0ICsgIiAiICsgcGFydGlhbAogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIHRyeVNlbmQoU3BlZWNoRXZlbnQuUGFydGlhbFJlc3VsdChwcmV2aWV3LnRyaW0oKSkpCiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvblJlc3VsdHMocmVzdWx0czogQnVuZGxlPykgewogICAgICAgICAgICAgICAgICAgIGlmIChjYW5jZWxsZWQpIHJldHVybgoKICAgICAgICAgICAgICAgICAgICB2YWwgcmVzdWx0ID0gcmVzdWx0cwogICAgICAgICAgICAgICAgICAgICAgICA/LmdldFN0cmluZ0FycmF5TGlzdChTcGVlY2hSZWNvZ25pemVyLlJFU1VMVFNfUkVDT0dOSVRJT04pCiAgICAgICAgICAgICAgICAgICAgICAgID8uZmlyc3RPck51bGwoKQogICAgICAgICAgICAgICAgICAgICAgICA/LnRyaW0oKQogICAgICAgICAgICAgICAgICAgICAgICAub3JFbXB0eSgpCgogICAgICAgICAgICAgICAgICAgIGlmIChyZXN1bHQuaXNOb3RCbGFuaygpICYmIHJlc3VsdCAhPSBsYXN0UmVzdWx0KSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHRyYW5zY3JpcHQgPSBpZiAodHJhbnNjcmlwdC5pc0JsYW5rKCkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIHJlc3VsdAogICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgdHJhbnNjcmlwdCArICIgIiArIHJlc3VsdAogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgICAgIGxhc3RSZXN1bHQgPSByZXN1bHQKICAgICAgICAgICAgICAgICAgICAgICAgdHJ5U2VuZChTcGVlY2hFdmVudC5QYXJ0aWFsUmVzdWx0KHRyYW5zY3JpcHQudHJpbSgpKSkKICAgICAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgICAgIGxhdW5jaCB7CiAgICAgICAgICAgICAgICAgICAgICAgIGRlbGF5KDE4MCkKICAgICAgICAgICAgICAgICAgICAgICAgaWYgKCFjYW5jZWxsZWQpIHN0YXJ0U2Vzc2lvbigpCiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvbkVycm9yKGVycm9yOiBJbnQpIHsKICAgICAgICAgICAgICAgICAgICBpZiAoY2FuY2VsbGVkKSByZXR1cm4KCiAgICAgICAgICAgICAgICAgICAgd2hlbiAoZXJyb3IpIHsKICAgICAgICAgICAgICAgICAgICAgICAgU3BlZWNoUmVjb2duaXplci5FUlJPUl9OT19NQVRDSCwKICAgICAgICAgICAgICAgICAgICAgICAgU3BlZWNoUmVjb2duaXplci5FUlJPUl9TUEVFQ0hfVElNRU9VVCAtPiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAodHJhbnNjcmlwdC5pc05vdEJsYW5rKCkpIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB0cnlTZW5kKFNwZWVjaEV2ZW50LkZpbmFsUmVzdWx0KHRyYW5zY3JpcHQudHJpbSgpKSkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBjbG9zZSgpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICB9IGVsc2UgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxhdW5jaCB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRlbGF5KDI1MCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKCFjYW5jZWxsZWQpIHN0YXJ0U2Vzc2lvbigpCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgICAgICAgICBTcGVlY2hSZWNvZ25pemVyLkVSUk9SX1JFQ09HTklaRVJfQlVTWSAtPiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICBsYXVuY2ggewogICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIGRlbGF5KDQwMCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBpZiAoIWNhbmNlbGxlZCkgc3RhcnRTZXNzaW9uKCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgICAgICAgICAgZWxzZSAtPiB7CiAgICAgICAgICAgICAgICAgICAgICAgICAgICB0cnlTZW5kKFNwZWVjaEV2ZW50LkVycm9yKGVycm9yTWVzc2FnZShlcnJvcikpKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgY2xvc2UoKQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvbkV2ZW50KGV2ZW50VHlwZTogSW50LCBwYXJhbXM6IEJ1bmRsZT8pIHt9CiAgICAgICAgICAgIH0pCgogICAgICAgICAgICB2YWwgaW50ZW50ID0gSW50ZW50KFJlY29nbml6ZXJJbnRlbnQuQUNUSU9OX1JFQ09HTklaRV9TUEVFQ0gpLmFwcGx5IHsKICAgICAgICAgICAgICAgIHB1dEV4dHJhKAogICAgICAgICAgICAgICAgICAgIFJlY29nbml6ZXJJbnRlbnQuRVhUUkFfTEFOR1VBR0VfTU9ERUwsCiAgICAgICAgICAgICAgICAgICAgUmVjb2duaXplckludGVudC5MQU5HVUFHRV9NT0RFTF9GUkVFX0ZPUk0KICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgIHB1dEV4dHJhKFJlY29nbml6ZXJJbnRlbnQuRVhUUkFfUEFSVElBTF9SRVNVTFRTLCB0cnVlKQogICAgICAgICAgICAgICAgcHV0RXh0cmEoCiAgICAgICAgICAgICAgICAgICAgUmVjb2duaXplckludGVudC5FWFRSQV9TUEVFQ0hfSU5QVVRfQ09NUExFVEVfU0lMRU5DRV9MRU5HVEhfTUlMTElTLAogICAgICAgICAgICAgICAgICAgIDYwMDBMCiAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICBwdXRFeHRyYSgKICAgICAgICAgICAgICAgICAgICBSZWNvZ25pemVySW50ZW50LkVYVFJBX1NQRUVDSF9JTlBVVF9QT1NTSUJMWV9DT01QTEVURV9TSUxFTkNFX0xFTkdUSF9NSUxMSVMsCiAgICAgICAgICAgICAgICAgICAgNDUwMEwKICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgIHB1dEV4dHJhKAogICAgICAgICAgICAgICAgICAgIFJlY29nbml6ZXJJbnRlbnQuRVhUUkFfU1BFRUNIX0lOUFVUX01JTklNVU1fTEVOR1RIX01JTExJUywKICAgICAgICAgICAgICAgICAgICAyNTAwTAogICAgICAgICAgICAgICAgKQogICAgICAgICAgICAgICAgaWYgKCFsYW5ndWFnZVRhZy5pc051bGxPckJsYW5rKCkpIHsKICAgICAgICAgICAgICAgICAgICBwdXRFeHRyYShSZWNvZ25pemVySW50ZW50LkVYVFJBX0xBTkdVQUdFLCBsYW5ndWFnZVRhZykKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQoKICAgICAgICAgICAgcnVuQ2F0Y2hpbmcgeyBzci5zdGFydExpc3RlbmluZyhpbnRlbnQpIH0KICAgICAgICAgICAgICAgIC5vbkZhaWx1cmUgewogICAgICAgICAgICAgICAgICAgIGlmICghY2FuY2VsbGVkKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHRyeVNlbmQoCiAgICAgICAgICAgICAgICAgICAgICAgICAgICBTcGVlY2hFdmVudC5FcnJvcigKICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAiQ291bGQgbm90IHN0YXJ0IHNwZWVjaCByZWNvZ25pdGlvbi4iCiAgICAgICAgICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9CiAgICAgICAgfQoKICAgICAgICBzdGFydFNlc3Npb24oKQoKICAgICAgICBhd2FpdENsb3NlIHsKICAgICAgICAgICAgY2FuY2VsbGVkID0gdHJ1ZQogICAgICAgICAgICByZWNvZ25pemVyPy5ydW5DYXRjaGluZyB7CiAgICAgICAgICAgICAgICBzdG9wTGlzdGVuaW5nKCkKICAgICAgICAgICAgICAgIGNhbmNlbCgpCiAgICAgICAgICAgICAgICBkZXN0cm95KCkKICAgICAgICAgICAgfQogICAgICAgICAgICByZWNvZ25pemVyID0gbnVsbAogICAgICAgIH0KICAgIH0KCiAgICBAU3luY2hyb25pemVkCiAgICBmdW4gY2FuY2VsKCkgewogICAgICAgIGNhbmNlbGxlZCA9IHRydWUKICAgICAgICByZWNvZ25pemVyPy5ydW5DYXRjaGluZyB7CiAgICAgICAgICAgIHN0b3BMaXN0ZW5pbmcoKQogICAgICAgICAgICBjYW5jZWwoKQogICAgICAgICAgICBkZXN0cm95KCkKICAgICAgICB9CiAgICAgICAgcmVjb2duaXplciA9IG51bGwKICAgIH0KCiAgICBwcml2YXRlIGZ1biBlcnJvck1lc3NhZ2UoZXJyb3I6IEludCk6IFN0cmluZyA9IHdoZW4gKGVycm9yKSB7CiAgICAgICAgU3BlZWNoUmVjb2duaXplci5FUlJPUl9OT19NQVRDSCAtPiAiSSBkaWRuJ3QgY2F0Y2ggdGhhdC4iCiAgICAgICAgU3BlZWNoUmVjb2duaXplci5FUlJPUl9TUEVFQ0hfVElNRU9VVCAtPiAiTm8gc3BlZWNoIGRldGVjdGVkLiIKICAgICAgICBTcGVlY2hSZWNvZ25pemVyLkVSUk9SX05FVFdPUkssCiAgICAgICAgU3BlZWNoUmVjb2duaXplci5FUlJPUl9ORVRXT1JLX1RJTUVPVVQgLT4KICAgICAgICAgICAgIk5ldHdvcmsgZXJyb3IgZHVyaW5nIHNwZWVjaCByZWNvZ25pdGlvbi4iCiAgICAgICAgU3BlZWNoUmVjb2duaXplci5FUlJPUl9JTlNVRkZJQ0lFTlRfUEVSTUlTU0lPTlMgLT4KICAgICAgICAgICAgIk1pY3JvcGhvbmUgcGVybWlzc2lvbiBpcyBuZWVkZWQuIgogICAgICAgIFNwZWVjaFJlY29nbml6ZXIuRVJST1JfUkVDT0dOSVpFUl9CVVNZIC0+CiAgICAgICAgICAgICJTcGVlY2ggcmVjb2duaXplciBpcyBidXN5LCB0cnkgYWdhaW4uIgogICAgICAgIGVsc2UgLT4gIlNwZWVjaCByZWNvZ25pdGlvbiBlcnJvci4iCiAgICB9Cn0K").decode()
+          tts = base64.b64decode("cGFja2FnZSBjb20uamFydmlzLmFzc2lzdGFudC52b2ljZQoKaW1wb3J0IGFuZHJvaWQuY29udGVudC5Db250ZXh0CmltcG9ydCBhbmRyb2lkLm1lZGlhLk1lZGlhUGxheWVyCmltcG9ydCBhbmRyb2lkLnNwZWVjaC50dHMuVGV4dFRvU3BlZWNoCmltcG9ydCBjb20uZ29vZ2xlLmdzb24uSnNvbk9iamVjdAppbXBvcnQgY29tLmphcnZpcy5hc3Npc3RhbnQuZGF0YS5sb2NhbC5wcmVmcy5TZWN1cmVQcmVmcwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLkNvcm91dGluZVNjb3BlCmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMuRGlzcGF0Y2hlcnMKaW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5Kb2IKaW1wb3J0IGtvdGxpbnguY29yb3V0aW5lcy5kZWxheQppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmZsb3cuTXV0YWJsZVN0YXRlRmxvdwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmZsb3cuU3RhdGVGbG93CmltcG9ydCBrb3RsaW54LmNvcm91dGluZXMuZmxvdy5hc1N0YXRlRmxvdwppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLmxhdW5jaAppbXBvcnQga290bGlueC5jb3JvdXRpbmVzLnN1c3BlbmRDYW5jZWxsYWJsZUNvcm91dGluZQppbXBvcnQgb2todHRwMy5Pa0h0dHBDbGllbnQKaW1wb3J0IHJldHJvZml0Mi5SZXRyb2ZpdAppbXBvcnQgcmV0cm9maXQyLmNvbnZlcnRlci5nc29uLkdzb25Db252ZXJ0ZXJGYWN0b3J5CmltcG9ydCBqYXZhLmlvLkZpbGUKaW1wb3J0IGphdmEudXRpbC5Mb2NhbGUKaW1wb3J0IGphdmEudXRpbC5VVUlECmltcG9ydCBqYXZhLnV0aWwuY29uY3VycmVudC5UaW1lVW5pdAppbXBvcnQga290bGluLmNvcm91dGluZXMucmVzdW1lCgpkYXRhIGNsYXNzIEphcnZpc1ZvaWNlKAogICAgdmFsIG5hbWU6IFN0cmluZywKICAgIHZhbCBkaXNwbGF5TGFiZWw6IFN0cmluZywKICAgIHZhbCBsaWtlbHlNYWxlOiBCb29sZWFuCikKCmRhdGEgY2xhc3MgQXVkaW9QbGF5ZXJTdGF0ZSgKICAgIHZhbCBmaWxlUGF0aDogU3RyaW5nPyA9IG51bGwsCiAgICB2YWwgdGl0bGU6IFN0cmluZyA9ICJKQVJWSVMgYXVkaW8iLAogICAgdmFsIGlzUGxheWluZzogQm9vbGVhbiA9IGZhbHNlLAogICAgdmFsIHBvc2l0aW9uTXM6IEludCA9IDAsCiAgICB2YWwgZHVyYXRpb25NczogSW50ID0gMCwKICAgIHZhbCBjaHVua0luZGV4OiBJbnQgPSAwLAogICAgdmFsIHRvdGFsQ2h1bmtzOiBJbnQgPSAwCikKCmNsYXNzIFRleHRUb1NwZWVjaE1hbmFnZXIoCiAgICBjb250ZXh0OiBDb250ZXh0LAogICAgcHJpdmF0ZSB2YWwgcHJlZnM6IFNlY3VyZVByZWZzID0gU2VjdXJlUHJlZnMoY29udGV4dCkKKSB7CiAgICBwcml2YXRlIHZhbCBhcHBDb250ZXh0ID0gY29udGV4dC5hcHBsaWNhdGlvbkNvbnRleHQKICAgIHByaXZhdGUgdmFsIGF1ZGlvRGlyID0gRmlsZShhcHBDb250ZXh0LmZpbGVzRGlyLCAiamFydmlzX2F1ZGlvIikuYXBwbHkgeyBta2RpcnMoKSB9CiAgICBwcml2YXRlIHZhbCBzY29wZSA9IENvcm91dGluZVNjb3BlKERpc3BhdGNoZXJzLk1haW4uaW1tZWRpYXRlKQoKICAgIHByaXZhdGUgdmFyIHBsYXllcjogTWVkaWFQbGF5ZXI/ID0gbnVsbAogICAgcHJpdmF0ZSB2YXIgcGxheWxpc3Q6IExpc3Q8RmlsZT4gPSBlbXB0eUxpc3QoKQogICAgcHJpdmF0ZSB2YXIgaW5kZXggPSAwCiAgICBwcml2YXRlIHZhciBjb21wbGV0aW9uOiAoKEJvb2xlYW4pIC0+IFVuaXQpPyA9IG51bGwKICAgIHByaXZhdGUgdmFyIHByb2dyZXNzSm9iOiBKb2I/ID0gbnVsbAogICAgcHJpdmF0ZSB2YXIgc3BlZWNoUmF0ZSA9IDEuMGYKICAgIHByaXZhdGUgdmFyIHNwZWVjaFBpdGNoID0gMS4wZgogICAgcHJpdmF0ZSB2YXIgc2VsZWN0ZWRWb2ljZSA9ICJjZWRhciIKCiAgICBwcml2YXRlIHZhbCBfYXVkaW9TdGF0ZSA9IE11dGFibGVTdGF0ZUZsb3coQXVkaW9QbGF5ZXJTdGF0ZSgpKQogICAgdmFsIGF1ZGlvU3RhdGU6IFN0YXRlRmxvdzxBdWRpb1BsYXllclN0YXRlPiA9IF9hdWRpb1N0YXRlLmFzU3RhdGVGbG93KCkKCiAgICBwcml2YXRlIHZhbCB2b2ljZXMgPSBsaXN0T2YoCiAgICAgICAgSmFydmlzVm9pY2UoImNlZGFyIiwgIkNlZGFyIMK3IE9wZW5BSSIsIHRydWUpLAogICAgICAgIEphcnZpc1ZvaWNlKCJtYXJpbiIsICJNYXJpbiDCtyBPcGVuQUkiLCBmYWxzZSksCiAgICAgICAgSmFydmlzVm9pY2UoIm9ueXgiLCAiT255eCDCtyBPcGVuQUkiLCB0cnVlKSwKICAgICAgICBKYXJ2aXNWb2ljZSgiYXNoIiwgIkFzaCDCtyBPcGVuQUkiLCB0cnVlKSwKICAgICAgICBKYXJ2aXNWb2ljZSgiZWNobyIsICJFY2hvIMK3IE9wZW5BSSIsIHRydWUpLAogICAgICAgIEphcnZpc1ZvaWNlKCJiYWxsYWQiLCAiQmFsbGFkIMK3IE9wZW5BSSIsIHRydWUpLAogICAgICAgIEphcnZpc1ZvaWNlKCJ2ZXJzZSIsICJWZXJzZSDCtyBPcGVuQUkiLCB0cnVlKSwKICAgICAgICBKYXJ2aXNWb2ljZSgiYWxsb3kiLCAiQWxsb3kgwrcgT3BlbkFJIiwgZmFsc2UpLAogICAgICAgIEphcnZpc1ZvaWNlKCJmYWJsZSIsICJGYWJsZSDCtyBPcGVuQUkiLCBmYWxzZSksCiAgICAgICAgSmFydmlzVm9pY2UoImNvcmFsIiwgIkNvcmFsIMK3IE9wZW5BSSIsIGZhbHNlKSwKICAgICAgICBKYXJ2aXNWb2ljZSgibm92YSIsICJOb3ZhIMK3IE9wZW5BSSIsIGZhbHNlKSwKICAgICAgICBKYXJ2aXNWb2ljZSgic2FnZSIsICJTYWdlIMK3IE9wZW5BSSIsIGZhbHNlKSwKICAgICAgICBKYXJ2aXNWb2ljZSgic2hpbW1lciIsICJTaGltbWVyIMK3IE9wZW5BSSIsIGZhbHNlKQogICAgKQoKICAgIHByaXZhdGUgdmFsIGFwaTogT3BlbkFpVHRzQXBpIGJ5IGxhenkgewogICAgICAgIFJldHJvZml0LkJ1aWxkZXIoKQogICAgICAgICAgICAuYmFzZVVybCgiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS8iKQogICAgICAgICAgICAuY2xpZW50KAogICAgICAgICAgICAgICAgT2tIdHRwQ2xpZW50LkJ1aWxkZXIoKQogICAgICAgICAgICAgICAgICAgIC5jb25uZWN0VGltZW91dCgyMCwgVGltZVVuaXQuU0VDT05EUykKICAgICAgICAgICAgICAgICAgICAucmVhZFRpbWVvdXQoOTAsIFRpbWVVbml0LlNFQ09ORFMpCiAgICAgICAgICAgICAgICAgICAgLndyaXRlVGltZW91dCgzMCwgVGltZVVuaXQuU0VDT05EUykKICAgICAgICAgICAgICAgICAgICAuY2FsbFRpbWVvdXQoMTIwLCBUaW1lVW5pdC5TRUNPTkRTKQogICAgICAgICAgICAgICAgICAgIC5idWlsZCgpCiAgICAgICAgICAgICkKICAgICAgICAgICAgLmFkZENvbnZlcnRlckZhY3RvcnkoR3NvbkNvbnZlcnRlckZhY3RvcnkuY3JlYXRlKCkpCiAgICAgICAgICAgIC5idWlsZCgpCiAgICAgICAgICAgIC5jcmVhdGUoT3BlbkFpVHRzQXBpOjpjbGFzcy5qYXZhKQogICAgfQoKICAgIGluaXQgewogICAgICAgIHNlbGVjdGVkVm9pY2UgPSBwcmVmcy52b2ljZU5hbWUKICAgICAgICAgICAgPy50YWtlSWYgeyBzYXZlZCAtPiB2b2ljZXMuYW55IHsgaXQubmFtZSA9PSBzYXZlZCB9IH0KICAgICAgICAgICAgPzogImNlZGFyIgoKICAgICAgICB2YWwgbGF0ZXN0ID0gYXVkaW9EaXIubGlzdEZpbGVzKCkKICAgICAgICAgICAgPy5maWx0ZXIgeyBpdC5leHRlbnNpb24uZXF1YWxzKCJtcDMiLCB0cnVlKSB9CiAgICAgICAgICAgID8ubWF4QnlPck51bGwgeyBpdC5sYXN0TW9kaWZpZWQoKSB9CgogICAgICAgIGlmIChsYXRlc3QgIT0gbnVsbCkgewogICAgICAgICAgICBfYXVkaW9TdGF0ZS52YWx1ZSA9IEF1ZGlvUGxheWVyU3RhdGUoCiAgICAgICAgICAgICAgICBmaWxlUGF0aCA9IGxhdGVzdC5hYnNvbHV0ZVBhdGgsCiAgICAgICAgICAgICAgICB0aXRsZSA9ICJTYXZlZCBKQVJWSVMgTVAzIiwKICAgICAgICAgICAgICAgIGlzUGxheWluZyA9IGZhbHNlLAogICAgICAgICAgICAgICAgcG9zaXRpb25NcyA9IDAsCiAgICAgICAgICAgICAgICBkdXJhdGlvbk1zID0gMCwKICAgICAgICAgICAgICAgIGNodW5rSW5kZXggPSAwLAogICAgICAgICAgICAgICAgdG90YWxDaHVua3MgPSAxCiAgICAgICAgICAgICkKICAgICAgICAgICAgcGxheWxpc3QgPSBsaXN0T2YobGF0ZXN0KQogICAgICAgIH0KICAgIH0KCiAgICBmdW4gc2V0TGFuZ3VhZ2UodGFnOiBTdHJpbmc/KSB7CiAgICAgICAgdGFnPy5sZXQgeyBMb2NhbGUuZm9yTGFuZ3VhZ2VUYWcoaXQpIH0KICAgIH0KCiAgICBmdW4gc2V0UmF0ZShyYXRlOiBGbG9hdCkgewogICAgICAgIHNwZWVjaFJhdGUgPSByYXRlLmNvZXJjZUluKDAuMjVmLCAyLjBmKQogICAgfQoKICAgIGZ1biBzZXRQaXRjaChwaXRjaDogRmxvYXQpIHsKICAgICAgICBzcGVlY2hQaXRjaCA9IHBpdGNoLmNvZXJjZUluKDAuNWYsIDIuMGYpCiAgICB9CgogICAgZnVuIGxpc3RWb2ljZXMoKTogTGlzdDxKYXJ2aXNWb2ljZT4gPSB2b2ljZXMKCiAgICBmdW4gYXV0b1NlbGVjdE1hbGVWb2ljZSgpOiBTdHJpbmc/ID0KICAgICAgICB2b2ljZXMuZmlyc3RPck51bGwgeyBpdC5saWtlbHlNYWxlIH0/Lm5hbWUKCiAgICBmdW4gc2V0Vm9pY2UobmFtZTogU3RyaW5nPykgewogICAgICAgIGlmIChuYW1lLmlzTnVsbE9yQmxhbmsoKSkgcmV0dXJuCiAgICAgICAgaWYgKHZvaWNlcy5ub25lIHsgaXQubmFtZSA9PSBuYW1lIH0pIHJldHVybgogICAgICAgIHNlbGVjdGVkVm9pY2UgPSBuYW1lCiAgICAgICAgcHJlZnMudm9pY2VOYW1lID0gbmFtZQogICAgfQoKICAgIHN1c3BlbmQgZnVuIHNwZWFrKHRleHQ6IFN0cmluZyk6IEJvb2xlYW4gewogICAgICAgIHZhbCBjbGVhbiA9IHRleHQudHJpbSgpCiAgICAgICAgaWYgKGNsZWFuLmlzQmxhbmsoKSkgcmV0dXJuIHRydWUKCiAgICAgICAgc3RvcEludGVybmFsKGZhbHNlKQoKICAgICAgICB2YWwga2V5ID0gcHJlZnMuYWlBcGlLZXkKICAgICAgICBpZiAoa2V5LmlzTnVsbE9yQmxhbmsoKSkgewogICAgICAgICAgICByZXR1cm4gc3BlYWtBbmRyb2lkKGNsZWFuKQogICAgICAgIH0KCiAgICAgICAgdmFsIGdlbmVyYXRlZCA9IG11dGFibGVMaXN0T2Y8RmlsZT4oKQoKICAgICAgICByZXR1cm4gdHJ5IHsKICAgICAgICAgICAgc3BsaXRGb3JTcGVlY2goY2xlYW4pLmZvckVhY2hJbmRleGVkIHsgaSwgY2h1bmsgLT4KICAgICAgICAgICAgICAgIHZhbCBmaWxlID0gRmlsZSgKICAgICAgICAgICAgICAgICAgICBhdWRpb0RpciwKICAgICAgICAgICAgICAgICAgICAiamFydmlzXyIgKyBTeXN0ZW0uY3VycmVudFRpbWVNaWxsaXMoKSArCiAgICAgICAgICAgICAgICAgICAgICAgICJfIiArIGkgKyAiXyIgKyBVVUlELnJhbmRvbVVVSUQoKSArICIubXAzIgogICAgICAgICAgICAgICAgKQoKICAgICAgICAgICAgICAgIHZhbCByZXF1ZXN0ID0gSnNvbk9iamVjdCgpLmFwcGx5IHsKICAgICAgICAgICAgICAgICAgICBhZGRQcm9wZXJ0eSgibW9kZWwiLCAiZ3B0LTRvLW1pbmktdHRzIikKICAgICAgICAgICAgICAgICAgICBhZGRQcm9wZXJ0eSgidm9pY2UiLCBzZWxlY3RlZFZvaWNlKQogICAgICAgICAgICAgICAgICAgIGFkZFByb3BlcnR5KCJpbnB1dCIsIGNodW5rKQogICAgICAgICAgICAgICAgICAgIGFkZFByb3BlcnR5KAogICAgICAgICAgICAgICAgICAgICAgICAiaW5zdHJ1Y3Rpb25zIiwKICAgICAgICAgICAgICAgICAgICAgICAgIlNwZWFrIGFzIEpBUlZJUzogY2FsbSwgZGVlcCwgd2FybSwgY29uZmlkZW50LCAiICsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICJpbnRlbGxpZ2VudCBhbmQgbmF0dXJhbC4gVXNlIHN1YnRsZSBwYXVzZXMgYW5kICIgKwogICAgICAgICAgICAgICAgICAgICAgICAgICAgInZhcmllZCBpbnRvbmF0aW9uLiBOZXZlciBzb3VuZCByb2JvdGljLiIKICAgICAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICAgICAgYWRkUHJvcGVydHkoInJlc3BvbnNlX2Zvcm1hdCIsICJtcDMiKQogICAgICAgICAgICAgICAgICAgIGFkZFByb3BlcnR5KAogICAgICAgICAgICAgICAgICAgICAgICAic3BlZWQiLAogICAgICAgICAgICAgICAgICAgICAgICBzcGVlY2hSYXRlLnRvRG91YmxlKCkuY29lcmNlSW4oMC4yNSwgNC4wKQogICAgICAgICAgICAgICAgICAgICkKICAgICAgICAgICAgICAgIH0KCiAgICAgICAgICAgICAgICB2YWwgYm9keSA9IGFwaS5jcmVhdGVTcGVlY2goIkJlYXJlciAiICsga2V5LCByZXF1ZXN0KQoKICAgICAgICAgICAgICAgIGlmICghYm9keS5pc1N1Y2Nlc3NmdWwpIHsKICAgICAgICAgICAgICAgICAgICBlcnJvcigiVFRTIEhUVFAgIiArIGJvZHkuY29kZSgpKQogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGJvZHkuYm9keSgpPy5ieXRlU3RyZWFtKCk/LnVzZSB7IGlucHV0IC0+CiAgICAgICAgICAgICAgICAgICAgZmlsZS5vdXRwdXRTdHJlYW0oKS51c2UgeyBvdXRwdXQgLT4gaW5wdXQuY29weVRvKG91dHB1dCkgfQogICAgICAgICAgICAgICAgfQoKICAgICAgICAgICAgICAgIGlmIChmaWxlLmxlbmd0aCgpID09IDBMKSBlcnJvcigiRW1wdHkgVFRTIGF1ZGlvIikKICAgICAgICAgICAgICAgIGdlbmVyYXRlZCArPSBmaWxlCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHBsYXlsaXN0ID0gZ2VuZXJhdGVkCiAgICAgICAgICAgIGluZGV4ID0gMAogICAgICAgICAgICBhd2FpdFBsYXliYWNrKCkKICAgICAgICB9IGNhdGNoIChfOiBFeGNlcHRpb24pIHsKICAgICAgICAgICAgZ2VuZXJhdGVkLmZvckVhY2ggeyBpdC5kZWxldGUoKSB9CiAgICAgICAgICAgIHNwZWFrQW5kcm9pZChjbGVhbikKICAgICAgICB9CiAgICB9CgogICAgcHJpdmF0ZSBmdW4gc3BsaXRGb3JTcGVlY2godGV4dDogU3RyaW5nKTogTGlzdDxTdHJpbmc+IHsKICAgICAgICB2YWwgbWF4ID0gMzYwMAogICAgICAgIGlmICh0ZXh0Lmxlbmd0aCA8PSBtYXgpIHJldHVybiBsaXN0T2YodGV4dCkKCiAgICAgICAgdmFsIHJlc3VsdCA9IG11dGFibGVMaXN0T2Y8U3RyaW5nPigpCiAgICAgICAgdmFyIHJlbWFpbmluZyA9IHRleHQudHJpbSgpCgogICAgICAgIHdoaWxlIChyZW1haW5pbmcubGVuZ3RoID4gbWF4KSB7CiAgICAgICAgICAgIHZhciBjdXQgPSAtMQoKICAgICAgICAgICAgZm9yIChpIGluIG1heCBkb3duVG8gMTIwMCkgewogICAgICAgICAgICAgICAgdmFsIGMgPSByZW1haW5pbmdbaV0KICAgICAgICAgICAgICAgIGlmICgKICAgICAgICAgICAgICAgICAgICBjID09ICcuJyB8fCBjID09ICchJyB8fCBjID09ICc/JyB8fAogICAgICAgICAgICAgICAgICAgIGMgPT0gJ1xuJyB8fCBjID09ICfjgIInIHx8IGMgPT0gJ++8gScgfHwgYyA9PSAn77yfJwogICAgICAgICAgICAgICAgKSB7CiAgICAgICAgICAgICAgICAgICAgY3V0ID0gaQogICAgICAgICAgICAgICAgICAgIGJyZWFrCiAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGlmIChjdXQgPCAxKSBjdXQgPSByZW1haW5pbmcubGFzdEluZGV4T2YoJyAnLCBtYXgpCiAgICAgICAgICAgIGlmIChjdXQgPCAxKSBjdXQgPSBtYXgKCiAgICAgICAgICAgIHJlc3VsdCArPSByZW1haW5pbmcuc3Vic3RyaW5nKDAsIGN1dCArIDEpLnRyaW0oKQogICAgICAgICAgICByZW1haW5pbmcgPSByZW1haW5pbmcuc3Vic3RyaW5nKGN1dCArIDEpLnRyaW0oKQogICAgICAgIH0KCiAgICAgICAgaWYgKHJlbWFpbmluZy5pc05vdEJsYW5rKCkpIHJlc3VsdCArPSByZW1haW5pbmcKICAgICAgICByZXR1cm4gcmVzdWx0CiAgICB9CgogICAgcHJpdmF0ZSBzdXNwZW5kIGZ1biBhd2FpdFBsYXliYWNrKCk6IEJvb2xlYW4gPQogICAgICAgIHN1c3BlbmRDYW5jZWxsYWJsZUNvcm91dGluZSB7IGNvbnQgLT4KICAgICAgICAgICAgY29tcGxldGlvbiA9IHsgb2sgLT4KICAgICAgICAgICAgICAgIGlmIChjb250LmlzQWN0aXZlKSBjb250LnJlc3VtZShvaykKICAgICAgICAgICAgfQogICAgICAgICAgICBwbGF5Q3VycmVudCgpCiAgICAgICAgICAgIGNvbnQuaW52b2tlT25DYW5jZWxsYXRpb24geyBzdG9wSW50ZXJuYWwoZmFsc2UpIH0KICAgICAgICB9CgogICAgcHJpdmF0ZSBmdW4gcGxheUN1cnJlbnQoKSB7CiAgICAgICAgdmFsIGZpbGUgPSBwbGF5bGlzdC5nZXRPck51bGwoaW5kZXgpID86IHJ1biB7CiAgICAgICAgICAgIGZpbmlzaFBsYXliYWNrKHRydWUpCiAgICAgICAgICAgIHJldHVybgogICAgICAgIH0KCiAgICAgICAgcGxheWVyPy5yZWxlYXNlKCkKCiAgICAgICAgcGxheWVyID0gTWVkaWFQbGF5ZXIoKS5hcHBseSB7CiAgICAgICAgICAgIHNldERhdGFTb3VyY2UoZmlsZS5hYnNvbHV0ZVBhdGgpCgogICAgICAgICAgICBzZXRPblByZXBhcmVkTGlzdGVuZXIgewogICAgICAgICAgICAgICAgX2F1ZGlvU3RhdGUudmFsdWUgPSBBdWRpb1BsYXllclN0YXRlKAogICAgICAgICAgICAgICAgICAgIGZpbGVQYXRoID0gZmlsZS5hYnNvbHV0ZVBhdGgsCiAgICAgICAgICAgICAgICAgICAgdGl0bGUgPSAiSkFSVklTIMK3IHBhcnQgIiArCiAgICAgICAgICAgICAgICAgICAgICAgIChpbmRleCArIDEpICsgIi8iICsgcGxheWxpc3Quc2l6ZSwKICAgICAgICAgICAgICAgICAgICBpc1BsYXlpbmcgPSB0cnVlLAogICAgICAgICAgICAgICAgICAgIHBvc2l0aW9uTXMgPSAwLAogICAgICAgICAgICAgICAgICAgIGR1cmF0aW9uTXMgPSBpdC5kdXJhdGlvbiwKICAgICAgICAgICAgICAgICAgICBjaHVua0luZGV4ID0gaW5kZXgsCiAgICAgICAgICAgICAgICAgICAgdG90YWxDaHVua3MgPSBwbGF5bGlzdC5zaXplCiAgICAgICAgICAgICAgICApCiAgICAgICAgICAgICAgICBpdC5zdGFydCgpCiAgICAgICAgICAgICAgICBzdGFydFByb2dyZXNzVXBkYXRlcygpCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHNldE9uQ29tcGxldGlvbkxpc3RlbmVyIHsKICAgICAgICAgICAgICAgIGlmIChpbmRleCArIDEgPCBwbGF5bGlzdC5zaXplKSB7CiAgICAgICAgICAgICAgICAgICAgaW5kZXgrKwogICAgICAgICAgICAgICAgICAgIHBsYXlDdXJyZW50KCkKICAgICAgICAgICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgICAgICAgICAgZmluaXNoUGxheWJhY2sodHJ1ZSkKICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgfQoKICAgICAgICAgICAgc2V0T25FcnJvckxpc3RlbmVyIHsgXywgXywgXyAtPgogICAgICAgICAgICAgICAgZmluaXNoUGxheWJhY2soZmFsc2UpCiAgICAgICAgICAgICAgICB0cnVlCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIHByZXBhcmVBc3luYygpCiAgICAgICAgfQogICAgfQoKICAgIHByaXZhdGUgZnVuIHN0YXJ0UHJvZ3Jlc3NVcGRhdGVzKCkgewogICAgICAgIHByb2dyZXNzSm9iPy5jYW5jZWwoKQoKICAgICAgICBwcm9ncmVzc0pvYiA9IHNjb3BlLmxhdW5jaCB7CiAgICAgICAgICAgIHdoaWxlIChwbGF5ZXIgIT0gbnVsbCkgewogICAgICAgICAgICAgICAgdmFsIHAgPSBwbGF5ZXIgPzogYnJlYWsKCiAgICAgICAgICAgICAgICBfYXVkaW9TdGF0ZS52YWx1ZSA9IF9hdWRpb1N0YXRlLnZhbHVlLmNvcHkoCiAgICAgICAgICAgICAgICAgICAgaXNQbGF5aW5nID0KICAgICAgICAgICAgICAgICAgICAgICAgcnVuQ2F0Y2hpbmcgeyBwLmlzUGxheWluZyB9LmdldE9yRGVmYXVsdChmYWxzZSksCiAgICAgICAgICAgICAgICAgICAgcG9zaXRpb25NcyA9CiAgICAgICAgICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsgcC5jdXJyZW50UG9zaXRpb24gfS5nZXRPckRlZmF1bHQoMCksCiAgICAgICAgICAgICAgICAgICAgZHVyYXRpb25NcyA9CiAgICAgICAgICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsgcC5kdXJhdGlvbiB9LmdldE9yRGVmYXVsdCgwKSwKICAgICAgICAgICAgICAgICAgICBjaHVua0luZGV4ID0gaW5kZXgsCiAgICAgICAgICAgICAgICAgICAgdG90YWxDaHVua3MgPSBwbGF5bGlzdC5zaXplCiAgICAgICAgICAgICAgICApCgogICAgICAgICAgICAgICAgZGVsYXkoMjUwKQogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQoKICAgIHByaXZhdGUgZnVuIGZpbmlzaFBsYXliYWNrKG9rOiBCb29sZWFuKSB7CiAgICAgICAgcHJvZ3Jlc3NKb2I/LmNhbmNlbCgpCiAgICAgICAgcGxheWVyPy5yZWxlYXNlKCkKICAgICAgICBwbGF5ZXIgPSBudWxsCgogICAgICAgIF9hdWRpb1N0YXRlLnZhbHVlID0KICAgICAgICAgICAgX2F1ZGlvU3RhdGUudmFsdWUuY29weShpc1BsYXlpbmcgPSBmYWxzZSkKCiAgICAgICAgdmFsIGRvbmUgPSBjb21wbGV0aW9uCiAgICAgICAgY29tcGxldGlvbiA9IG51bGwKICAgICAgICBkb25lPy5pbnZva2Uob2spCiAgICB9CgogICAgZnVuIHBhdXNlQXVkaW8oKSB7CiAgICAgICAgcGxheWVyPy5wYXVzZSgpCiAgICAgICAgX2F1ZGlvU3RhdGUudmFsdWUgPQogICAgICAgICAgICBfYXVkaW9TdGF0ZS52YWx1ZS5jb3B5KGlzUGxheWluZyA9IGZhbHNlKQogICAgfQoKICAgIGZ1biByZXN1bWVBdWRpbygpIHsKICAgICAgICBwbGF5ZXI/LnN0YXJ0KCkKICAgICAgICBfYXVkaW9TdGF0ZS52YWx1ZSA9CiAgICAgICAgICAgIF9hdWRpb1N0YXRlLnZhbHVlLmNvcHkoaXNQbGF5aW5nID0gdHJ1ZSkKICAgIH0KCiAgICBmdW4gcmVzdGFydEF1ZGlvKCkgewogICAgICAgIHBsYXllcj8uc2Vla1RvKDApCiAgICAgICAgcGxheWVyPy5zdGFydCgpCiAgICAgICAgX2F1ZGlvU3RhdGUudmFsdWUgPQogICAgICAgICAgICBfYXVkaW9TdGF0ZS52YWx1ZS5jb3B5KAogICAgICAgICAgICAgICAgaXNQbGF5aW5nID0gdHJ1ZSwKICAgICAgICAgICAgICAgIHBvc2l0aW9uTXMgPSAwCiAgICAgICAgICAgICkKICAgIH0KCiAgICBmdW4gcHJldmlvdXNBdWRpbygpIHsKICAgICAgICBpZiAoaW5kZXggPiAwKSB7CiAgICAgICAgICAgIGluZGV4LS0KICAgICAgICAgICAgcGxheUN1cnJlbnQoKQogICAgICAgIH0gZWxzZSB7CiAgICAgICAgICAgIHJlc3RhcnRBdWRpbygpCiAgICAgICAgfQogICAgfQoKICAgIGZ1biBuZXh0QXVkaW8oKSB7CiAgICAgICAgaWYgKGluZGV4ICsgMSA8IHBsYXlsaXN0LnNpemUpIHsKICAgICAgICAgICAgaW5kZXgrKwogICAgICAgICAgICBwbGF5Q3VycmVudCgpCiAgICAgICAgfQogICAgfQoKICAgIGZ1biBzZWVrQXVkaW8ocG9zaXRpb25NczogSW50KSB7CiAgICAgICAgcGxheWVyPy5zZWVrVG8ocG9zaXRpb25Ncy5jb2VyY2VBdExlYXN0KDApKQogICAgfQoKICAgIGZ1biBzdG9wKCkgewogICAgICAgIHN0b3BJbnRlcm5hbCh0cnVlKQogICAgfQoKICAgIHByaXZhdGUgZnVuIHN0b3BJbnRlcm5hbChyZXNvbHZlOiBCb29sZWFuKSB7CiAgICAgICAgcHJvZ3Jlc3NKb2I/LmNhbmNlbCgpCiAgICAgICAgcnVuQ2F0Y2hpbmcgeyBwbGF5ZXI/LnN0b3AoKSB9CiAgICAgICAgcGxheWVyPy5yZWxlYXNlKCkKICAgICAgICBwbGF5ZXIgPSBudWxsCgogICAgICAgIGlmIChyZXNvbHZlKSB7CiAgICAgICAgICAgIHZhbCBkb25lID0gY29tcGxldGlvbgogICAgICAgICAgICBjb21wbGV0aW9uID0gbnVsbAogICAgICAgICAgICBkb25lPy5pbnZva2UoZmFsc2UpCiAgICAgICAgfQoKICAgICAgICBfYXVkaW9TdGF0ZS52YWx1ZSA9CiAgICAgICAgICAgIF9hdWRpb1N0YXRlLnZhbHVlLmNvcHkoaXNQbGF5aW5nID0gZmFsc2UpCiAgICB9CgogICAgcHJpdmF0ZSBzdXNwZW5kIGZ1biBzcGVha0FuZHJvaWQodGV4dDogU3RyaW5nKTogQm9vbGVhbiA9CiAgICAgICAgc3VzcGVuZENhbmNlbGxhYmxlQ29yb3V0aW5lIHsgY29udCAtPgogICAgICAgICAgICBsYXRlaW5pdCB2YXIgbG9jYWw6IFRleHRUb1NwZWVjaAogICAgICAgICAgICBsb2NhbCA9IFRleHRUb1NwZWVjaChhcHBDb250ZXh0KSB7IHN0YXR1cyAtPgogICAgICAgICAgICAgICAgaWYgKHN0YXR1cyAhPSBUZXh0VG9TcGVlY2guU1VDQ0VTUykgewogICAgICAgICAgICAgICAgICAgIGlmIChjb250LmlzQWN0aXZlKSBjb250LnJlc3VtZShmYWxzZSkKICAgICAgICAgICAgICAgICAgICByZXR1cm5AVGV4dFRvU3BlZWNoCiAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgdmFsIGlkID0gVVVJRC5yYW5kb21VVUlEKCkudG9TdHJpbmcoKQogICAgICAgICAgICAgICAgbG9jYWwuc2V0U3BlZWNoUmF0ZShzcGVlY2hSYXRlKQogICAgICAgICAgICAgICAgbG9jYWwuc2V0UGl0Y2goc3BlZWNoUGl0Y2gpCgogICAgICAgICAgICAgICAgbG9jYWwuc2V0T25VdHRlcmFuY2VQcm9ncmVzc0xpc3RlbmVyKAogICAgICAgICAgICAgICAgICAgIG9iamVjdCA6IGFuZHJvaWQuc3BlZWNoLnR0cy5VdHRlcmFuY2VQcm9ncmVzc0xpc3RlbmVyKCkgewogICAgICAgICAgICAgICAgICAgICAgICBvdmVycmlkZSBmdW4gb25TdGFydCh1dHRlcmFuY2VJZDogU3RyaW5nPykge30KCiAgICAgICAgICAgICAgICAgICAgICAgIG92ZXJyaWRlIGZ1biBvbkRvbmUodXR0ZXJhbmNlSWQ6IFN0cmluZz8pIHsKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGxvY2FsLnNodXRkb3duKCkKICAgICAgICAgICAgICAgICAgICAgICAgICAgIGlmIChjb250LmlzQWN0aXZlKSBjb250LnJlc3VtZSh0cnVlKQogICAgICAgICAgICAgICAgICAgICAgICB9CgogICAgICAgICAgICAgICAgICAgICAgICBvdmVycmlkZSBmdW4gb25FcnJvcih1dHRlcmFuY2VJZDogU3RyaW5nPykgewogICAgICAgICAgICAgICAgICAgICAgICAgICAgbG9jYWwuc2h1dGRvd24oKQogICAgICAgICAgICAgICAgICAgICAgICAgICAgaWYgKGNvbnQuaXNBY3RpdmUpIGNvbnQucmVzdW1lKGZhbHNlKQogICAgICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgKQoKICAgICAgICAgICAgICAgIGlmICgKICAgICAgICAgICAgICAgICAgICBsb2NhbC5zcGVhaygKICAgICAgICAgICAgICAgICAgICAgICAgdGV4dCwKICAgICAgICAgICAgICAgICAgICAgICAgVGV4dFRvU3BlZWNoLlFVRVVFX0ZMVVNILAogICAgICAgICAgICAgICAgICAgICAgICBudWxsLAogICAgICAgICAgICAgICAgICAgICAgICBpZAogICAgICAgICAgICAgICAgICAgICkgPT0gVGV4dFRvU3BlZWNoLkVSUk9SCiAgICAgICAgICAgICAgICApIHsKICAgICAgICAgICAgICAgICAgICBsb2NhbC5zaHV0ZG93bigpCiAgICAgICAgICAgICAgICAgICAgaWYgKGNvbnQuaXNBY3RpdmUpIGNvbnQucmVzdW1lKGZhbHNlKQogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CgogICAgICAgICAgICBjb250Lmludm9rZU9uQ2FuY2VsbGF0aW9uIHsKICAgICAgICAgICAgICAgIHJ1bkNhdGNoaW5nIHsgbG9jYWwuc2h1dGRvd24oKSB9CiAgICAgICAgICAgIH0KICAgICAgICB9CgogICAgZnVuIHNodXRkb3duKCkgewogICAgICAgIHN0b3BJbnRlcm5hbChmYWxzZSkKICAgIH0KfQo=").decode()
+          tts_api = base64.b64decode("cGFja2FnZSBjb20uamFydmlzLmFzc2lzdGFudC52b2ljZQoKaW1wb3J0IGNvbS5nb29nbGUuZ3Nvbi5Kc29uT2JqZWN0CmltcG9ydCBva2h0dHAzLlJlc3BvbnNlQm9keQppbXBvcnQgcmV0cm9maXQyLlJlc3BvbnNlCmltcG9ydCByZXRyb2ZpdDIuaHR0cC5Cb2R5CmltcG9ydCByZXRyb2ZpdDIuaHR0cC5IZWFkZXIKaW1wb3J0IHJldHJvZml0Mi5odHRwLlBPU1QKCmludGVyZmFjZSBPcGVuQWlUdHNBcGkgewogICAgQFBPU1QoInYxL2F1ZGlvL3NwZWVjaCIpCiAgICBzdXNwZW5kIGZ1biBjcmVhdGVTcGVlY2goCiAgICAgICAgQEhlYWRlcigiQXV0aG9yaXphdGlvbiIpIGF1dGhIZWFkZXI6IFN0cmluZywKICAgICAgICBAQm9keSByZXF1ZXN0OiBKc29uT2JqZWN0CiAgICApOiBSZXNwb25zZTxSZXNwb25zZUJvZHk+Cn0K").decode()
+          
+          (root / "voice/SpeechToTextManager.kt").write_text(speech, encoding="utf-8")
+          (root / "voice/TextToSpeechManager.kt").write_text(tts, encoding="utf-8")
+          (root / "voice/OpenAiTtsApi.kt").write_text(tts_api, encoding="utf-8")
+          
+          p = root / "di/AppContainer.kt"
+          s = p.read_text()
+          s = s.replace(
+              "val textToSpeechManager = TextToSpeechManager(context)",
+              "val textToSpeechManager = TextToSpeechManager(context, securePrefs)"
+          )
+          p.write_text(s)
+          
+          manifest = Path("app/src/main/AndroidManifest.xml")
+          ms = manifest.read_text()
+          if "android.speech.RecognitionService" not in ms:
+              ms = ms.replace(
+                  "    <queries>\n",
+                  "    <queries>\n"
+                  "        <intent>\n"
+                  "            <action android:name=\"android.speech.RecognitionService\" />\n"
+                  "        </intent>\n"
+              )
+          manifest.write_text(ms)
+          
+          gradle = Path("app/build.gradle.kts")
+          gs = gradle.read_text()
+          gs = gs.replace('?: "gpt-4o-mini"', '?: "gpt-5.6-luna"')
+          gradle.write_text(gs)
+          PY
+
+      - name: Add local ChatGPT archive import and retrieval
+        shell: bash
+        run: |
+          set -e
+          python3 <<'PY'
+          from pathlib import Path
+          
+          root = Path("app/src/main/kotlin/com/jarvis/assistant")
+          
+          importer = r'''
+          package com.jarvis.assistant.data.repository
+          
+          import android.content.Context
+          import android.net.Uri
+          import com.jarvis.assistant.data.local.db.entity.KnowledgeEntity
+          import org.json.JSONArray
+          import org.json.JSONObject
+          import java.io.File
+          import java.util.zip.ZipFile
+          
+          data class ChatGptImportResult(
+              val conversations: Int,
+              val messages: Int,
+              val files: Int
+          )
+          
+          class ChatGptArchiveImporter(
+              private val context: Context,
+              private val conversations: ConversationRepository,
+              private val knowledge: KnowledgeRepository
+          ) {
+              suspend fun importZip(uri: Uri): ChatGptImportResult {
+                  val work = File(
+                      context.cacheDir,
+                      "chatgpt_import_" + System.currentTimeMillis()
+                  ).apply { mkdirs() }
+          
+                  val zipFile = File(work, "export.zip")
+          
+                  context.contentResolver.openInputStream(uri).use { input ->
+                      requireNotNull(input) { "Could not open the selected export." }
+                      zipFile.outputStream().use { output -> input.copyTo(output) }
+                  }
+          
+                  var conversationCount = 0
+                  var messageCount = 0
+                  var fileCount = 0
+          
+                  ZipFile(zipFile).use { zip ->
+                      val jsonEntries = zip.entries().asSequence()
+                          .filter { !it.isDirectory }
+                          .filter {
+                              val name = it.name.substringAfterLast('/')
+                              name.equals("conversations.json", true) ||
+                                  name.matches(
+                                      Regex(
+                                          "conversations_[0-9]+\\.json",
+                                          RegexOption.IGNORE_CASE
+                                      )
+                                  )
+                          }
+                          .toList()
+          
+                      for (entry in jsonEntries) {
+                          val text = zip.getInputStream(entry)
+                              .bufferedReader()
+                              .use { it.readText() }
+          
+                          val array = JSONArray(text)
+          
+                          for (i in 0 until array.length()) {
+                              val conversation = array.optJSONObject(i) ?: continue
+                              val title = conversation.optString("title")
+                                  .ifBlank { "Imported ChatGPT conversation" }
+          
+                              val localId = conversations.createConversation(
+                                  "ChatGPT · " + title
+                              )
+          
+                              var imported = 0
+                              val mapping = conversation.optJSONObject("mapping")
+          
+                              if (mapping != null) {
+                                  val nodes = mapping.keys().asSequence()
+                                      .mapNotNull { mapping.optJSONObject(it) }
+                                      .sortedBy {
+                                          it.optDouble("create_time", 0.0)
+                                      }
+          
+                                  for (node in nodes) {
+                                      val message =
+                                          node.optJSONObject("message") ?: continue
+          
+                                      val role = message
+                                          .optJSONObject("author")
+                                          ?.optString("role")
+                                          .orEmpty()
+          
+                                      if (role != "user" && role != "assistant") continue
+          
+                                      val content =
+                                          extractContent(message.optJSONObject("content"))
+          
+                                      if (content.isBlank()) continue
+          
+                                      val timestamp = (
+                                          message.optDouble(
+                                              "create_time",
+                                              conversation.optDouble("create_time", 0.0)
+                                          ) * 1000.0
+                                      ).toLong().takeIf { it > 0 }
+                                          ?: System.currentTimeMillis()
+          
+                                      conversations.addImportedMessage(
+                                          localId,
+                                          role,
+                                          content,
+                                          timestamp
+                                      )
+          
+                                      imported++
+                                      messageCount++
+                                  }
+                              }
+          
+                              if (imported > 0) conversationCount++
+                          }
+                      }
+          
+                      val fileRoot = File(
+                          context.filesDir,
+                          "chatgpt_import/files"
+                      ).apply { mkdirs() }
+          
+                      val textFiles = mutableListOf<KnowledgeEntity>()
+          
+                      zip.entries().asSequence()
+                          .filter { !it.isDirectory }
+                          .forEach { entry ->
+                              val base = entry.name.substringAfterLast('/')
+          
+                              if (base.equals("conversations.json", true)) {
+                                  return@forEach
+                              }
+          
+                              if (
+                                  base.matches(
+                                      Regex(
+                                          "conversations_[0-9]+\\.json",
+                                          RegexOption.IGNORE_CASE
+                                      )
+                                  )
+                              ) {
+                                  return@forEach
+                              }
+          
+                              val safeName = entry.name
+                                  .replace("..", "_")
+                                  .replace("\\", "_")
+                                  .trimStart('/')
+          
+                              val output = File(fileRoot, safeName)
+                              output.parentFile?.mkdirs()
+          
+                              zip.getInputStream(entry).use { input ->
+                                  output.outputStream().use { out -> input.copyTo(out) }
+                              }
+          
+                              fileCount++
+          
+                              val ext = output.extension.lowercase()
+                              if (
+                                  ext in setOf(
+                                      "txt", "md", "json", "csv", "xml", "log"
+                                  )
+                              ) {
+                                  val content = runCatching {
+                                      output.readText(Charsets.UTF_8).take(120000)
+                                  }.getOrDefault("")
+          
+                                  if (content.isNotBlank()) {
+                                      textFiles += KnowledgeEntity(
+                                          externalId =
+                                              "chatgpt_file:" +
+                                                  safeName.hashCode().toString(),
+                                          category = "chatgpt_archive",
+                                          topic = safeName,
+                                          content =
+                                              "Imported ChatGPT file: " +
+                                                  safeName + "\n" + content,
+                                          keywords = safeName
+                                              .replace(
+                                                  Regex("[^A-Za-zА-Яа-я0-9]+"),
+                                                  " "
+                                              )
+                                              .lowercase(),
+                                          source = "custom"
+                                      )
+                                  }
+                              }
+                          }
+          
+                      if (textFiles.isNotEmpty()) {
+                          knowledge.upsertCustom(textFiles)
+                      }
+                  }
+          
+                  zipFile.delete()
+                  work.deleteRecursively()
+          
+                  return ChatGptImportResult(
+                      conversationCount,
+                      messageCount,
+                      fileCount
+                  )
+              }
+          
+              private fun extractContent(content: JSONObject?): String {
+                  if (content == null) return ""
+          
+                  val parts = content.optJSONArray("parts") ?: return ""
+                  val out = StringBuilder()
+          
+                  for (i in 0 until parts.length()) {
+                      when (val part = parts.opt(i)) {
+                          is String -> out.append(part).append('\n')
+                          is JSONObject -> {
+                              val text = part.optString("text")
+                              if (text.isNotBlank()) {
+                                  out.append(text).append('\n')
+                              }
+                          }
+                      }
+                  }
+          
+                  return out.toString().trim()
+              }
+          }
+          '''
+          
+          p = root / "data/repository/ChatGptArchiveImporter.kt"
+          p.parent.mkdir(parents=True, exist_ok=True)
+          p.write_text(importer.lstrip(), encoding="utf-8")
+          
+          # Conversation search.
+          # ConversationDao.kt also contains MessageDao, so add the query to
+          # the MessageDao interface where the messages table is defined.
+          p = root / "data/local/db/dao/ConversationDao.kt"
+          s = p.read_text()
+          if "suspend fun searchMessages(query: String" not in s:
+              needle = '''    @Insert
+              suspend fun insert(message: MessageEntity): Long
+          '''
+              addition = needle + '''
+              @Query("SELECT * FROM messages WHERE content LIKE '%' || :query || '%' ORDER BY timestamp DESC LIMIT :limit")
+              suspend fun searchMessages(query: String, limit: Int = 30): List<MessageEntity>
+          '''
+              s = s.replace(needle, addition)
+          p.write_text(s)
+          
+          p = root / "data/repository/ConversationRepository.kt"
+          s = p.read_text()
+          if "addImportedMessage" not in s:
+              needle = '''    suspend fun addMessage(conversationId: Long, role: String, content: String) {
+                  messageDao.insert(MessageEntity(conversationId = conversationId, role = role, content = content))
+              }
+          '''
+              addition = needle + '''
+              suspend fun addImportedMessage(
+                  conversationId: Long,
+                  role: String,
+                  content: String,
+                  timestamp: Long
+              ) {
+                  messageDao.insert(
+                      MessageEntity(
+                          conversationId = conversationId,
+                          role = role,
+                          content = content,
+                          timestamp = timestamp
+                      )
+                  )
+              }
+          
+              suspend fun searchMessages(
+                  query: String,
+                  limit: Int = 30
+              ): List<MessageEntity> =
+                  messageDao.searchMessages(query, limit)
+          '''
+              s = s.replace(needle, addition)
+          p.write_text(s)
+          
+          # Knowledge insertion.
+          p = root / "data/repository/KnowledgeRepository.kt"
+          s = p.read_text()
+          if "upsertCustom" not in s:
+              needle = '    suspend fun totalCount(): Int = dao.totalCount()\n'
+              s = s.replace(
+                  needle,
+                  needle + '''
+              suspend fun upsertCustom(entries: List<KnowledgeEntity>) {
+                  if (entries.isNotEmpty()) dao.upsertAll(entries)
+              }
+          '''
+              )
+          p.write_text(s)
+          
+          # Wire importer.
+          p = root / "di/AppContainer.kt"
+          s = p.read_text()
+          s = s.replace("import com.jarvis.assistant.data.repository.KnowledgeRepository", "import com.jarvis.assistant.data.repository.KnowledgeRepository\nimport com.jarvis.assistant.data.repository.ChatGptArchiveImporter")
+          if "chatGptArchiveImporter" not in s:
+              needle = "    val knowledgeRepository = KnowledgeRepository(context, database.knowledgeDao())\n"
+              s = s.replace(
+                  needle,
+                  needle +
+                  "    val chatGptArchiveImporter = ChatGptArchiveImporter(context, conversationRepository, knowledgeRepository)\n"
+              )
+          p.write_text(s)
+          
+          # Settings VM.
+          p = root / "ui/screens/settings/SettingsViewModel.kt"
+          s = p.read_text()
+          if "chatGptImportStatus" not in s:
+              marker = '    val state: StateFlow<SettingsState> = _state.asStateFlow()\n'
+              addition = marker + '''
+              private val _chatGptImportStatus = MutableStateFlow("")
+              val chatGptImportStatus: StateFlow<String> = _chatGptImportStatus.asStateFlow()
+          
+              fun importChatGptArchive(uri: Uri) {
+                  viewModelScope.launch {
+                      _chatGptImportStatus.value = "Importing ChatGPT archive..."
+                      runCatching {
+                          container.chatGptArchiveImporter.importZip(uri)
+                      }.onSuccess { result ->
+                          _chatGptImportStatus.value =
+                              "Imported " + result.conversations +
+                                  " conversations, " + result.messages +
+                                  " messages, " + result.files + " files."
+                      }.onFailure { error ->
+                          _chatGptImportStatus.value =
+                              "Import failed: " +
+                                  (error.message ?: "unknown error")
+                      }
+                  }
+              }
+          '''
+              s = s.replace(marker, addition)
+          p.write_text(s)
+          
+          # Make the existing voice-list lambdas explicit for Kotlin compiler inference.
+          p = root / "ui/screens/settings/SettingsViewModel.kt"
+          s = p.read_text()
+          s = s.replace(
+              "repeat(10) {",
+              "repeat(10) { _: Int ->"
+          )
+          s = s.replace(
+              "val voices = container.textToSpeechManager.listVoices()",
+              "val voices: List<JarvisVoice> = container.textToSpeechManager.listVoices()"
+          )
+          s = s.replace(
+              "voices.firstOrNull { it.likelyMale }?.name?.let { updateVoice(it) }",
+              "voices.firstOrNull { voice: JarvisVoice -> voice.likelyMale }?.name?.let { name: String -> updateVoice(name) }"
+          )
+          p.write_text(s)
+          
+          # Settings UI.
+          p = root / "ui/screens/settings/SettingsScreen.kt"
+          s = p.read_text()
+          
+          if "rememberLauncherForActivityResult" not in s:
+              s = s.replace(
+                  "import androidx.compose.runtime.setValue\n",
+                  "import androidx.compose.runtime.setValue\n"
+                  "import androidx.activity.compose.rememberLauncherForActivityResult\n"
+                  "import androidx.activity.result.contract.ActivityResultContracts\n"
+              )
+          
+          if "chatGptImportLauncher" not in s:
+              marker = '    var voiceMenuExpanded by remember { mutableStateOf(false) }\n'
+              addition = marker + '''
+              val chatGptImportLauncher = rememberLauncherForActivityResult(
+                  ActivityResultContracts.OpenDocument()
+              ) { uri ->
+                  if (uri != null) viewModel.importChatGptArchive(uri)
+              }
+          
+              val chatGptImportStatus by
+                  viewModel.chatGptImportStatus.collectAsState()
+          '''
+              s = s.replace(marker, addition)
+          
+          if "Import ChatGPT data" not in s:
+              marker = '        SectionLabel("Voice")\n'
+              addition = '''
+                  SectionLabel("ChatGPT Archive")
+                  Text(
+                      "Import your ChatGPT export ZIP. Conversations go into the local Room database; exported files are copied to JARVIS private storage. Relevant local text is retrieved before an API request.",
+                      color = JarvisTextSecondary,
+                      style = MaterialTheme.typography.labelSmall,
+                      modifier = Modifier.padding(
+                          horizontal = 16.dp,
+                          vertical = 4.dp
+                      )
+                  )
+          
+                  OutlinedButton(
+                      onClick = {
+                          chatGptImportLauncher.launch(
+                              arrayOf(
+                                  "application/zip",
+                                  "application/octet-stream",
+                                  "*/*"
+                              )
+                          )
+                      },
+                      modifier = Modifier
+                          .fillMaxWidth()
+                          .padding(horizontal = 16.dp, vertical = 6.dp)
+                  ) {
+                      Text("Import ChatGPT data")
+                  }
+          
+                  if (chatGptImportStatus.isNotBlank()) {
+                      Text(
+                          chatGptImportStatus,
+                          color = JarvisCyan,
+                          style = MaterialTheme.typography.labelSmall,
+                          modifier = Modifier.padding(
+                              horizontal = 16.dp,
+                              vertical = 4.dp
+                          )
+                      )
+                  }
+          
+          '''
+              s = s.replace(marker, addition + marker)
+          
+          p.write_text(s)
+          
+          # Local archive retrieval in OpenAI service.
+          p = root / "ai/OpenAiService.kt"
+          s = p.read_text()
+          
+          if "LOCAL CHAT ARCHIVE" not in s:
+              marker = "            val conversation = history\n"
+              if marker in s:
+                  prefix = """            val query = history.lastOrNull {
+                          it.role.equals("user", true)
+                      }?.content.orEmpty()
+          
+                      val terms = query
+                          .split(Regex("\\\\s+"))
+                          .map { it.trim { c -> !c.isLetterOrDigit() } }
+                          .filter { it.length >= 4 }
+                          .distinct()
+                          .take(5)
+          
+                      val archive = terms
+                          .flatMap { term ->
+                              runCatching {
+                                  com.jarvis.assistant.JarvisApplication
+                                      .instance
+                                      .container
+                                      .conversationRepository
+                                      .searchMessages(term, 8)
+                              }.getOrDefault(emptyList())
+                          }
+                          .distinctBy { it.id }
+                          .take(16)
+          
+                      val archiveContext = archive.joinToString("\\n\\n") {
+                          "LOCAL CHAT ARCHIVE [" + it.role + "]: " +
+                              it.content.take(5000)
+                      }
+          
+          """
+                  s = s.replace(marker, prefix + marker, 1)
+          
+                  input_marker = "            val input = if (conversation.isBlank()) {"
+                  request_marker = "            val request = JsonObject().apply"
+                  input_start = s.find(input_marker)
+                  request_start = s.find(request_marker, input_start)
+                  if input_start >= 0 and request_start > input_start:
+                      new_input = """            val input = buildString {
+                          if (archiveContext.isNotBlank()) {
+                              append("Relevant local archive context follows. Treat it as historical user-provided material.\\n\\n")
+                              append(archiveContext)
+                              append("\\n\\n")
+                          }
+                          if (conversation.isBlank()) {
+                              append("USER: Please answer the user's request.")
+                          } else {
+                              append(conversation)
+                          }
+                      }
+          
+          """
+                      s = s[:input_start] + new_input + s[request_start:]
+          
+          p.write_text(s)
+          # Make the global application accessor available.
+          p = root / "JarvisApplication.kt"
+          s = p.read_text()
+          if "companion object" not in s:
+              s = s.replace(
+                  "class JarvisApplication : Application() {",
+                  "class JarvisApplication : Application() {\n    companion object { lateinit var instance: JarvisApplication }"
+              )
+          if "instance = this" not in s:
+              s = s.replace(
+                  "override fun onCreate() {",
+                  "override fun onCreate() {\n        instance = this"
+              )
+          p.write_text(s)
+          PY
+
+
+      - name: Preflight validate patched source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("app/src/main/kotlin/com/jarvis/assistant")
+          required = [
+              root / "voice/SpeechToTextManager.kt",
+              root / "voice/TextToSpeechManager.kt",
+              root / "voice/OpenAiTtsApi.kt",
+              root / "data/repository/ChatGptArchiveImporter.kt",
+          ]
+          missing = [str(p) for p in required if not p.exists()]
+          if missing:
+              raise SystemExit("Missing patched file(s): " + ", ".join(missing))
+
+          tts = (root / "voice/TextToSpeechManager.kt").read_text()
+          assert "lateinit var local: TextToSpeech" in tts
+          assert 'local = TextToSpeech(appContext)' in tts
+          assert '@POST("v1/audio/speech")' in (root / "voice/OpenAiTtsApi.kt").read_text()
+          assert "Response<ResponseBody>" in (root / "voice/OpenAiTtsApi.kt").read_text()
+          assert "searchMessages(query: String" in (root / "data/local/db/dao/ConversationDao.kt").read_text()
+          assert "addImportedMessage(" in (root / "data/repository/ConversationRepository.kt").read_text()
+          assert "importChatGptArchive(" in (root / "ui/screens/settings/SettingsViewModel.kt").read_text()
+          assert "rememberLauncherForActivityResult" in (root / "ui/screens/settings/SettingsScreen.kt").read_text()
+          assert "Import ChatGPT data" in (root / "ui/screens/settings/SettingsScreen.kt").read_text()
+          assert "companion object { lateinit var instance" in (root / "JarvisApplication.kt").read_text()
+          assert "instance = this" in (root / "JarvisApplication.kt").read_text()
+          tts_body = (root / "voice/TextToSpeechManager.kt").read_text()
+          assert "body.body()?.byteStream()" in tts_body
+          assert "private val prefs: SecurePrefs = SecurePrefs(context)" in tts_body
+          app_container = (root / "di/AppContainer.kt").read_text()
+          assert "import com.jarvis.assistant.data.repository.ChatGptArchiveImporter" in app_container
+          assert "ChatGptArchiveImporter(context, conversationRepository, knowledgeRepository)" in app_container
+          boot = (root / "ui/screens/boot/BootScreen.kt").read_text()
+          assert "TextToSpeechManager(context)" in boot
+          settings = (root / "ui/screens/settings/SettingsViewModel.kt").read_text()
+          assert "repeat(10) { _: Int ->" in settings
+          assert "val voices: List<JarvisVoice>" in settings
+          assert "voice: JarvisVoice -> voice.likelyMale" in settings
+          openai = (root / "ai/OpenAiService.kt").read_text()
+          assert "extractCommand" in openai
+          assert 'gpt-5.6-luna' in Path("app/build.gradle.kts").read_text()
+          print("Preflight source validation: OK")
+          PY
+
+      - name: Build upgraded APK
+        run: |
+          gradle --no-daemon --stacktrace assembleDebug \
+            -PAI_DEFAULT_MODEL="gpt-5.6-luna" \
+            -PAI_DEFAULT_API_KEY="" \
+            -PAI_DEFAULT_BASE_URL="https://api.openai.com/"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: JARVIS-Voice-Persistent-Audio-Upgrade
+          path: app/build/outputs/apk/debug/*.apk
