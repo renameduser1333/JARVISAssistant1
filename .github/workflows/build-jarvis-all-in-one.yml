@@ -64,7 +64,7 @@ jobs:
           gs = gradle.read_text()
           gs = gs.replace('?: "gpt-4o-mini"', '?: "gpt-5.6-luna"')
           gradle.write_text(gs)
-          PY          
+          PY
 
       - name: Add local ChatGPT archive import and retrieval
         shell: bash
@@ -565,7 +565,7 @@ jobs:
                   "override fun onCreate() {\n        instance = this"
               )
           p.write_text(s)
-          PY          
+          PY
 
 
       - name: Preflight validate patched source
