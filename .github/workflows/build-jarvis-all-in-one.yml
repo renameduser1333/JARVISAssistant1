@@ -3,6 +3,9 @@ name: Build JARVIS Voice Persistent Audio Upgrade
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-jarvis-all-in-one.yml'
 
 permissions:
   contents: read
