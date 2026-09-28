@@ -12,12 +12,16 @@ jobs:
 
     steps:
 
+      # ============================================================
+      # 1. DOWNLOAD PROJECT
+      # ============================================================
+
       - name: Checkout
         uses: actions/checkout@v4
 
 
       # ============================================================
-      # OPENAI TTS API INTERFACE
+      # 2. OPENAI TTS API
       # ============================================================
 
       - name: Add OpenAI TTS API
@@ -46,7 +50,7 @@ jobs:
 
 
       # ============================================================
-      # OPENAI TTS MANAGER
+      # 3. OPENAI TTS ENGINE
       # ============================================================
 
       - name: Replace Android TTS with OpenAI TTS
@@ -91,8 +95,7 @@ jobs:
 
               private var ready = false
 
-              private var mediaPlayer: MediaPlayer? =
-                  null
+              private var mediaPlayer: MediaPlayer? = null
 
               private var speechRate = 1.0f
 
@@ -101,89 +104,88 @@ jobs:
               private var selectedVoice = "cedar"
 
               /*
-               * OpenAI TTS voices
+               * OpenAI voices
                */
-              private val voices =
-                  listOf(
+              private val voices = listOf(
 
-                      JarvisVoice(
-                          "cedar",
-                          "Cedar · OpenAI",
-                          true
-                      ),
+                  JarvisVoice(
+                      "cedar",
+                      "Cedar · OpenAI",
+                      true
+                  ),
 
-                      JarvisVoice(
-                          "marin",
-                          "Marin · OpenAI",
-                          false
-                      ),
+                  JarvisVoice(
+                      "marin",
+                      "Marin · OpenAI",
+                      false
+                  ),
 
-                      JarvisVoice(
-                          "onyx",
-                          "Onyx · OpenAI",
-                          true
-                      ),
+                  JarvisVoice(
+                      "onyx",
+                      "Onyx · OpenAI",
+                      true
+                  ),
 
-                      JarvisVoice(
-                          "ash",
-                          "Ash · OpenAI",
-                          true
-                      ),
+                  JarvisVoice(
+                      "ash",
+                      "Ash · OpenAI",
+                      true
+                  ),
 
-                      JarvisVoice(
-                          "echo",
-                          "Echo · OpenAI",
-                          true
-                      ),
+                  JarvisVoice(
+                      "echo",
+                      "Echo · OpenAI",
+                      true
+                  ),
 
-                      JarvisVoice(
-                          "ballad",
-                          "Ballad · OpenAI",
-                          true
-                      ),
+                  JarvisVoice(
+                      "ballad",
+                      "Ballad · OpenAI",
+                      true
+                  ),
 
-                      JarvisVoice(
-                          "verse",
-                          "Verse · OpenAI",
-                          true
-                      ),
+                  JarvisVoice(
+                      "verse",
+                      "Verse · OpenAI",
+                      true
+                  ),
 
-                      JarvisVoice(
-                          "alloy",
-                          "Alloy · OpenAI",
-                          false
-                      ),
+                  JarvisVoice(
+                      "alloy",
+                      "Alloy · OpenAI",
+                      false
+                  ),
 
-                      JarvisVoice(
-                          "fable",
-                          "Fable · OpenAI",
-                          false
-                      ),
+                  JarvisVoice(
+                      "fable",
+                      "Fable · OpenAI",
+                      false
+                  ),
 
-                      JarvisVoice(
-                          "coral",
-                          "Coral · OpenAI",
-                          false
-                      ),
+                  JarvisVoice(
+                      "coral",
+                      "Coral · OpenAI",
+                      false
+                  ),
 
-                      JarvisVoice(
-                          "nova",
-                          "Nova · OpenAI",
-                          false
-                      ),
+                  JarvisVoice(
+                      "nova",
+                      "Nova · OpenAI",
+                      false
+                  ),
 
-                      JarvisVoice(
-                          "sage",
-                          "Sage · OpenAI",
-                          false
-                      ),
+                  JarvisVoice(
+                      "sage",
+                      "Sage · OpenAI",
+                      false
+                  ),
 
-                      JarvisVoice(
-                          "shimmer",
-                          "Shimmer · OpenAI",
-                          false
-                      )
+                  JarvisVoice(
+                      "shimmer",
+                      "Shimmer · OpenAI",
+                      false
                   )
+              )
 
               /*
                * OpenAI API client
@@ -236,7 +238,8 @@ jobs:
                           ?: "cedar"
 
                   /*
-                   * Android TTS remains only as fallback.
+                   * Android TTS is kept only
+                   * as emergency fallback.
                    */
                   tts =
                       TextToSpeech(
@@ -303,9 +306,6 @@ jobs:
                   )
               }
 
-              /*
-               * Return OpenAI voices.
-               */
               fun listVoices():
                   List<JarvisVoice> {
 
@@ -347,7 +347,7 @@ jobs:
               }
 
               /*
-               * Main speech method.
+               * Main speech function.
                */
               suspend fun speak(
                   text: String
@@ -362,21 +362,17 @@ jobs:
                       return true
                   }
 
-                  /*
-                   * Existing OpenAI API key
-                   * from JARVIS settings.
-                   */
                   val apiKey =
                       prefs.aiApiKey
 
                   /*
-                   * OpenAI TTS.
+                   * OpenAI TTS first.
                    */
                   if (
                       !apiKey.isNullOrBlank()
                   ) {
 
-                      val result =
+                      val success =
                           runCatching {
 
                               speakOpenAi(
@@ -386,13 +382,13 @@ jobs:
 
                           }.getOrDefault(false)
 
-                      if (result) {
+                      if (success) {
                           return true
                       }
                   }
 
                   /*
-                   * Emergency Android fallback.
+                   * Android fallback.
                    */
                   return speakAndroid(
                       cleanText
@@ -400,7 +396,7 @@ jobs:
               }
 
               /*
-               * Generate speech using OpenAI.
+               * Generate MP3 using OpenAI.
                */
               private suspend fun speakOpenAi(
                   apiKey: String,
@@ -551,6 +547,7 @@ jobs:
                           if (
                               mediaPlayer === player
                           ) {
+
                               mediaPlayer =
                                   null
                           }
@@ -764,7 +761,7 @@ jobs:
 
 
       # ============================================================
-      # CONNECT SECURE PREFS
+      # 4. CONNECT SECURE PREFS TO MAIN TTS
       # ============================================================
 
       - name: Wire SecurePrefs into TTS
@@ -785,7 +782,7 @@ jobs:
 
           if old not in text:
               raise SystemExit(
-                  "TextToSpeechManager constructor not found"
+                  "TextToSpeechManager constructor not found in AppContainer.kt"
               )
 
           path.write_text(
@@ -797,13 +794,55 @@ jobs:
           )
 
           print(
-              "SecurePrefs successfully connected."
+              "Main TTS successfully connected to SecurePrefs."
           )
           PY
 
 
       # ============================================================
-      # SIMPLE VERIFICATION
+      # 5. FIX BOOT SCREEN
+      # ============================================================
+
+      - name: Fix BootScreen TTS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "app/src/main/kotlin/com/jarvis/assistant/ui/screens/boot/BootScreen.kt"
+          )
+
+          text = path.read_text()
+
+          old = "val bootVoice = TextToSpeechManager(context)"
+
+          new = """val bootVoice = TextToSpeechManager(
+              context,
+              com.jarvis.assistant.data.local.prefs.SecurePrefs(context)
+          )"""
+
+          if old not in text:
+              raise SystemExit(
+                  "BootScreen TTS constructor not found"
+              )
+
+          path.write_text(
+              text.replace(
+                  old,
+                  new,
+                  1
+              )
+          )
+
+          print(
+              "BootScreen TTS successfully fixed."
+          )
+          PY
+
+
+      # ============================================================
+      # 6. VERIFY
       # ============================================================
 
       - name: Verify OpenAI TTS
@@ -811,14 +850,20 @@ jobs:
         run: |
           set -e
 
-          echo "Checking OpenAI TTS model..."
+          echo "========================================"
+          echo "VERIFYING OPENAI TTS"
+          echo "========================================"
+
+          echo ""
+          echo "Checking TTS model..."
 
           grep -q \
             "gpt-4o-mini-tts" \
             app/src/main/kotlin/com/jarvis/assistant/voice/TextToSpeechManager.kt
 
-          echo "OK: TTS model"
+          echo "OK: OpenAI TTS model"
 
+          echo ""
           echo "Checking Speech API..."
 
           grep -q \
@@ -827,15 +872,26 @@ jobs:
 
           echo "OK: Speech API"
 
+          echo ""
           echo "Checking SecurePrefs..."
 
           grep -q \
             "TextToSpeechManager(context, securePrefs)" \
             app/src/main/kotlin/com/jarvis/assistant/di/AppContainer.kt
 
-          echo "OK: SecurePrefs"
+          echo "OK: Main TTS"
 
-          echo "Checking TTS voices..."
+          echo ""
+          echo "Checking BootScreen..."
+
+          grep -q \
+            "SecurePrefs(context)" \
+            app/src/main/kotlin/com/jarvis/assistant/ui/screens/boot/BootScreen.kt
+
+          echo "OK: BootScreen"
+
+          echo ""
+          echo "Checking Cedar..."
 
           grep -q \
             '"cedar"' \
@@ -843,17 +899,23 @@ jobs:
 
           echo "OK: Cedar"
 
+          echo ""
+          echo "Checking Marin..."
+
           grep -q \
             '"marin"' \
             app/src/main/kotlin/com/jarvis/assistant/voice/TextToSpeechManager.kt
 
           echo "OK: Marin"
 
-          echo "Checking completed successfully."
+          echo ""
+          echo "========================================"
+          echo "OPENAI TTS VERIFICATION PASSED"
+          echo "========================================"
 
 
       # ============================================================
-      # JAVA 17
+      # 7. JAVA 17
       # ============================================================
 
       - name: Set up Java 17
@@ -864,7 +926,7 @@ jobs:
 
 
       # ============================================================
-      # GRADLE
+      # 8. GRADLE
       # ============================================================
 
       - name: Set up Gradle
@@ -874,7 +936,7 @@ jobs:
 
 
       # ============================================================
-      # BUILD
+      # 9. BUILD APK
       # ============================================================
 
       - name: Build APK
@@ -886,7 +948,7 @@ jobs:
 
 
       # ============================================================
-      # UPLOAD
+      # 10. UPLOAD APK
       # ============================================================
 
       - name: Upload OpenAI TTS APK
