@@ -1,4 +1,5 @@
 name: Build JARVIS Voice Persistent Audio Upgrade
+# Manual build trigger
 
 on:
   workflow_dispatch:
