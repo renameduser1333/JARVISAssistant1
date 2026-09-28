@@ -1,11 +1,16 @@
-name: Build JARVIS OpenAI Web Search
+name: Build JARVIS Research Upgrade
 
 on:
   workflow_dispatch:
   push:
     paths:
-      - "JARVISAssistant1-OpenAI-WebSearch-ready.zip"
       - ".github/workflows/build-ready.yml"
+      - "app/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -15,42 +20,430 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Find and extract prepared project
+      # ============================================================
+      # OPENAI RESPONSES API + WEB SEARCH
+      # ============================================================
+
+      - name: Upgrade OpenAI API
         shell: bash
         run: |
           set -e
 
-          ZIP="$(find . -maxdepth 2 -type f -name 'JARVISAssistant1-OpenAI-WebSearch-ready.zip' | head -n 1)"
+          cat > app/src/main/kotlin/com/jarvis/assistant/ai/OpenAiApi.kt <<'EOF'
+          package com.jarvis.assistant.ai
 
-          if [ -z "$ZIP" ]; then
-            echo "Prepared ZIP was not found."
-            exit 1
+          import com.google.gson.JsonObject
+          import retrofit2.http.Body
+          import retrofit2.http.Header
+          import retrofit2.http.POST
+
+          interface OpenAiApi {
+              @POST("v1/responses")
+              suspend fun createResponse(
+                  @Header("Authorization") authHeader: String,
+                  @Body request: JsonObject
+              ): JsonObject
+          }
+          EOF
+
+      - name: Upgrade OpenAI service
+        shell: bash
+        run: |
+          set -e
+
+          cat > app/src/main/kotlin/com/jarvis/assistant/ai/OpenAiService.kt <<'EOF'
+          package com.jarvis.assistant.ai
+
+          import com.google.gson.JsonArray
+          import com.google.gson.JsonObject
+          import com.jarvis.assistant.data.local.prefs.SecurePrefs
+          import okhttp3.OkHttpClient
+          import okhttp3.logging.HttpLoggingInterceptor
+          import retrofit2.Retrofit
+          import retrofit2.converter.gson.GsonConverterFactory
+          import java.util.concurrent.TimeUnit
+
+          /**
+           * JARVIS OpenAI Responses API client.
+           *
+           * Uses the Responses API with the built-in web_search tool.
+           * The API key remains on-device in SecurePrefs.
+           */
+          class OpenAiService(private val prefs: SecurePrefs) : AiService {
+
+              override suspend fun send(
+                  history: List<ChatMessage>,
+                  systemPrompt: String
+              ): Result<AiResult> {
+
+                  val apiKey = prefs.aiApiKey
+
+                  if (apiKey.isNullOrBlank()) {
+                      return Result.failure(
+                          IllegalStateException(
+                              "No AI API key configured. Add one in Settings."
+                          )
+                      )
+                  }
+
+                  val baseUrl = prefs.aiBaseUrl
+                      ?.takeIf { it.isNotBlank() }
+                      ?: "https://api.openai.com/"
+
+                  return try {
+                      val api = buildApi(baseUrl)
+
+                      /*
+                       * Keep the conversation compact enough for voice use.
+                       * The current user message is already included in history.
+                       */
+                      val conversation = history
+                          .takeLast(20)
+                          .joinToString("\n\n") { message ->
+                              val role = when (message.role.lowercase()) {
+                                  "assistant" -> "JARVIS"
+                                  "system" -> "SYSTEM"
+                                  else -> "USER"
+                              }
+
+                              "$role: ${message.content}"
+                          }
+
+                      val input = if (conversation.isBlank()) {
+                          "USER: Please answer the user's request."
+                      } else {
+                          conversation
+                      }
+
+                      val request = JsonObject().apply {
+                          addProperty("model", prefs.aiModel)
+
+                          addProperty("instructions", systemPrompt)
+
+                          addProperty("input", input)
+
+                          add(
+                              "tools",
+                              JsonArray().apply {
+                                  add(
+                                      JsonObject().apply {
+                                          addProperty("type", "web_search")
+                                          addProperty(
+                                              "search_context_size",
+                                              "medium"
+                                          )
+                                      }
+                                  )
+                              }
+                          )
+
+                          /*
+                           * Give research questions enough room for a useful answer.
+                           * This is an output limit, not a web-search limit.
+                           */
+                          addProperty("max_output_tokens", 3000)
+                      }
+
+                      val response = api.createResponse(
+                          authHeader = "Bearer $apiKey",
+                          request = request
+                      )
+
+                      val rawText = extractOutputText(response)
+
+                      if (rawText.isBlank()) {
+                          return Result.failure(
+                              IllegalStateException(
+                                  "OpenAI returned an empty response."
+                              )
+                          )
+                      }
+
+                      Result.success(extractCommand(rawText))
+
+                  } catch (e: Exception) {
+                      Result.failure(e)
+                  }
+              }
+
+              private fun buildApi(baseUrl: String): OpenAiApi {
+
+                  val logging = HttpLoggingInterceptor().apply {
+                      level = HttpLoggingInterceptor.Level.BASIC
+                  }
+
+                  val client = OkHttpClient.Builder()
+                      .addInterceptor(logging)
+
+                      /*
+                       * Research may legitimately take longer than a normal
+                       * chat request, but it must never hang forever.
+                       */
+                      .connectTimeout(30, TimeUnit.SECONDS)
+                      .readTimeout(90, TimeUnit.SECONDS)
+                      .writeTimeout(30, TimeUnit.SECONDS)
+                      .callTimeout(120, TimeUnit.SECONDS)
+                      .build()
+
+                  val normalizedBase =
+                      if (baseUrl.endsWith("/")) {
+                          baseUrl
+                      } else {
+                          "$baseUrl/"
+                      }
+
+                  return Retrofit.Builder()
+                      .baseUrl(normalizedBase)
+                      .client(client)
+                      .addConverterFactory(GsonConverterFactory.create())
+                      .build()
+                      .create(OpenAiApi::class.java)
+              }
+
+              /**
+               * Responses API can return multiple output items:
+               * web_search_call, message, reasoning, etc.
+               *
+               * Never assume output[0] is the answer.
+               */
+              private fun extractOutputText(response: JsonObject): String {
+
+                  val output = response
+                      .getAsJsonArray("output")
+                      ?: return response
+                          .get("output_text")
+                          ?.asString
+                          .orEmpty()
+
+                  val texts = mutableListOf<String>()
+
+                  for (itemElement in output) {
+
+                      if (!itemElement.isJsonObject) continue
+
+                      val item = itemElement.asJsonObject
+
+                      if (item.get("type")?.asString != "message") {
+                          continue
+                      }
+
+                      val content = item
+                          .getAsJsonArray("content")
+                          ?: continue
+
+                      for (contentElement in content) {
+
+                          if (!contentElement.isJsonObject) continue
+
+                          val contentItem = contentElement.asJsonObject
+
+                          if (
+                              contentItem.get("type")?.asString ==
+                              "output_text"
+                          ) {
+                              val text = contentItem
+                                  .get("text")
+                                  ?.asString
+                                  .orEmpty()
+
+                              if (text.isNotBlank()) {
+                                  texts += text
+                              }
+                          }
+                      }
+                  }
+
+                  return texts.joinToString("\n\n").trim()
+              }
+
+              private fun extractCommand(rawText: String): AiResult {
+
+                  val regex = Regex(
+                      "```jarvis_command\\\\s*([\\\\s\\\\S]*?)```"
+                  )
+
+                  val match = regex.find(rawText)
+
+                  val commandJson =
+                      match?.groupValues?.get(1)?.trim()
+
+                  val replyText =
+                      if (match != null) {
+                          rawText
+                              .replace(match.value, "")
+                              .trim()
+                      } else {
+                          rawText.trim()
+                      }
+
+                  return AiResult(
+                      replyText = replyText,
+                      commandJson = commandJson
+                  )
+              }
+          }
+          EOF
+
+      # ============================================================
+      # DISABLE OLD BRAVE SEARCH
+      # ============================================================
+
+      - name: Remove legacy Brave search path
+        shell: bash
+        run: |
+          set -e
+
+          cat > app/src/main/kotlin/com/jarvis/assistant/search/WebSearchService.kt <<'EOF'
+          package com.jarvis.assistant.search
+
+          import com.jarvis.assistant.data.local.prefs.SecurePrefs
+
+          /**
+           * Legacy compatibility layer.
+           *
+           * Web search is now performed directly by OpenAI Responses API
+           * using the built-in web_search tool.
+           *
+           * This class remains so existing ViewModel/Service wiring does not
+           * break, but it no longer calls Brave Search or requires a Brave key.
+           */
+
+          fun needsWebSearch(text: String): Boolean {
+              /*
+               * The Responses API decides itself whether a web search is
+               * necessary. This prevents duplicate Brave/OpenAI searches.
+               */
+              return false
+          }
+
+          class WebSearchService(
+              private val prefs: SecurePrefs
+          ) {
+              suspend fun search(query: String): Result<String> {
+                  return Result.success("")
+              }
+          }
+          EOF
+
+      # ============================================================
+      # RESEARCH QUALITY / SOURCE VERIFICATION RULES
+      # ============================================================
+
+      - name: Upgrade research instructions
+        shell: bash
+        run: |
+          set -e
+
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path(
+              "app/src/main/kotlin/com/jarvis/assistant/ai/PromptComponents.kt"
+          )
+
+          text = path.read_text()
+
+          old = '''        Never invent facts, and never claim to have done something you did not actually do —
+                  if you are only suggesting an action, phrase it as a suggestion, and only include a
+                  command block when the user's request clearly asks for that action. Never claim a
+                  capability is available if the CAPABILITY STATE block below says otherwise — say
+                  plainly that it's currently unavailable, and name the missing permission if one would
+                  enable it. Never invent a type outside the supported action list. Never include a
+                  command block for anything the user did not actually ask you to do.'''
+
+          new = '''        Never invent facts, and never claim to have done something you did not actually do —
+                  if you are only suggesting an action, phrase it as a suggestion, and only include a
+                  command block when the user's request clearly asks for that action. Never claim a
+                  capability is available if the CAPABILITY STATE block below says otherwise — say
+                  plainly that it's currently unavailable, and name the missing permission if one would
+                  enable it. Never invent a type outside the supported action list. Never include a
+                  command block for anything the user did not actually ask you to do.
+
+                  WEB RESEARCH RULES:
+                  - The Responses API has access to the built-in web_search tool. Use it whenever the
+                    question depends on current, recent, changing, or externally verifiable information.
+                  - Do not rely on model memory for today's news, current prices, current weather,
+                    current availability, active service outages, current political/electoral facts,
+                    current regulations, current sports results, or other rapidly changing facts.
+                  - Always pay attention to the current date and distinguish the publication date,
+                    update date, event date, and effective/recovery date.
+                  - Never treat an old announcement as proof that a current situation is unchanged.
+                  - Prefer primary sources for factual status: official company announcements,
+                    government pages, official documentation, official statistics, direct statements,
+                    exchange status pages, and original research.
+                  - For important or disputed claims, compare multiple relevant sources instead of
+                    relying on one search result.
+                  - If two sources conflict, do not silently choose one. Search again, inspect the
+                    dates and context, and explain the conflict if it remains unresolved.
+                  - For broad research requests, use several focused searches rather than one huge query.
+                    Prefer a small number of high-quality sources and synthesize them.
+                  - Do not invent URLs, dates, quotations, source names, or source contents.
+                  - When sources are available, make the source attribution clear in the answer.
+                  - If reliable current evidence cannot be found, explicitly say what could not be
+                    verified instead of filling the gap with a guess.
+                  - For current-status questions, answer the user's actual "as of" date/time first,
+                    then provide the supporting context.
+                  - Keep research conclusions separate from speculation. Label uncertainty clearly.'''
+
+          if old not in text:
+              raise SystemExit(
+                  "Could not find the expected securityRules block. "
+                  "The source file may have changed and was not modified."
+              )
+
+          text = text.replace(old, new, 1)
+
+          path.write_text(text)
+          PY
+
+      # ============================================================
+      # VERIFY SOURCE CHANGES
+      # ============================================================
+
+      - name: Verify upgraded source
+        shell: bash
+        run: |
+          set -e
+
+          grep -q '@POST("v1/responses")' \
+            app/src/main/kotlin/com/jarvis/assistant/ai/OpenAiApi.kt
+
+          grep -q '"web_search"' \
+            app/src/main/kotlin/com/jarvis/assistant/ai/OpenAiService.kt
+
+          grep -q 'WEB RESEARCH RULES' \
+            app/src/main/kotlin/com/jarvis/assistant/ai/PromptComponents.kt
+
+          echo "Research upgrade source verification passed."
+
+      # ============================================================
+      # SAVE CHANGES BACK TO GITHUB
+      # ============================================================
+
+      - name: Commit research upgrade
+        shell: bash
+        run: |
+          set -e
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            app/src/main/kotlin/com/jarvis/assistant/ai/OpenAiApi.kt \
+            app/src/main/kotlin/com/jarvis/assistant/ai/OpenAiService.kt \
+            app/src/main/kotlin/com/jarvis/assistant/search/WebSearchService.kt \
+            app/src/main/kotlin/com/jarvis/assistant/ai/PromptComponents.kt
+
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+          else
+            git commit -m "Upgrade JARVIS research and web search"
+            git push origin HEAD:${GITHUB_REF_NAME}
           fi
 
-          echo "Using: $ZIP"
-
-          rm -rf extracted-project
-          mkdir extracted-project
-
-          unzip -q "$ZIP" -d extracted-project
-
-          ROOT="$(find extracted-project -mindepth 1 -maxdepth 1 -type d | head -n 1)"
-
-          if [ -z "$ROOT" ]; then
-            echo "Could not find project directory inside ZIP."
-            exit 1
-          fi
-
-          echo "Project root: $ROOT"
-
-          cp -a "$ROOT"/. .
-
-          echo "Checking Android project..."
-
-          test -f settings.gradle.kts
-          test -f app/build.gradle.kts
-
-          echo "Android project found successfully."
+      # ============================================================
+      # BUILD
+      # ============================================================
 
       - name: Set up Java 17
         uses: actions/setup-java@v4
@@ -79,6 +472,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: JARVIS-OpenAI-WebSearch-APK
+          name: JARVIS-Research-Upgrade-APK
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
